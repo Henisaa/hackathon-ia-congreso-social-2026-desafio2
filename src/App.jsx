@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import CanalConfidencial from './components/CanalConfidencial';
 import AsistenteBeneficios from './components/AsistenteBeneficios';
@@ -12,6 +12,30 @@ export default function App() {
   const [tabBecado, setTabBecado] = useState('chat'); // 'chat' | 'beneficios' | 'ficha'
   const [tabEquipo, setTabEquipo] = useState('panel'); // 'panel' | 'auditoria'
   const [modoSimulacion, setModoSimulacion] = useState('auto'); // 'auto' | 'mobile' | 'tablet'
+
+  // Leer atajos PWA y parámetros URL al cargar
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      const vista = params.get('vista');
+      if (vista === 'equipo' || vista === 'becado') {
+        setVistaActual(vista);
+      }
+      if (tab === 'canal' || tab === 'chat') {
+        setVistaActual('becado');
+        setTabBecado('chat');
+      } else if (tab === 'beneficios') {
+        setVistaActual('becado');
+        setTabBecado('beneficios');
+      } else if (tab === 'ficha') {
+        setVistaActual('becado');
+        setTabBecado('ficha');
+      }
+    } catch (e) {
+      // Ignorar errores en entornos sin window
+    }
+  }, []);
 
   // Perfil del becado en sesión
   const [becadoPerfil, setBecadoPerfil] = useState({

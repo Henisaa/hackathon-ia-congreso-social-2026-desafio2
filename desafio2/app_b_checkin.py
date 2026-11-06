@@ -212,30 +212,26 @@ with tab_chat:
                 ss.turno += 1
                 ss.ultimo_info = {}
 
-                # 1. Alerta Roja: Crisis o violencia
+                # 1. Alerta Roja: Crisis o violencia (Protocolo directo sin pasar por IA)
                 if N.crisis(user_msg):
                     ss.hist.append({"role": "assistant", "content": N.MENSAJE_CRISIS})
                     N.registrar({"tipo": "protocolo_crisis", "entrada": user_msg, "salida": N.MENSAJE_CRISIS})
                     registrar_caso(pid, ss.becado_perfil["nombre"], "ROJA", user_msg, "S03", "Señal de crisis vital/violencia detectada: llamada urgente de profesional.", "Canal Confidencial")
                 
-                # 2. Alerta Naranja: Abandono por transporte, comida o vivienda
-                elif PATRON_NARANJA.search(user_msg):
-                    m_gat = PATRON_NARANJA.search(user_msg).group(0)
-                    resp_naranja = f"Gracias por compartirlo, {ss.becado_perfil['nombre']}. Lo que me cuentas sobre '{m_gat}' es muy importante. En Fundación Puente no estás solo(a): contamos con la **Beca Mensual [S01]**, **Becas de Emergencia [S04]** y **Residencia [S05]**. Dejaré un aviso prioritario para que una profesional de la fundación te contacte en **menos de 48 horas**. ¿Te gustaría agregar algo más?"
-                    ss.hist.append({"role": "assistant", "content": resp_naranja})
-                    registrar_caso(pid, ss.becado_perfil["nombre"], "NARANJA", user_msg, "S04", f"Situación crítica económica/habitacional ({m_gat}): requiere contacto en 48 horas.", "Canal Confidencial")
-
-                # 3. Alerta Amarilla: Reprobación o dudas de beneficios
-                elif PATRON_AMARILLA.search(user_msg):
-                    m_gat = PATRON_AMARILLA.search(user_msg).group(0)
-                    resp_amarilla = f"Te entiendo, {ss.becado_perfil['nombre']}. Problemas con '{m_gat}' son comunes en el inicio de la carrera. Tenemos las **Tutorías del CAI [S02]** y orientación sobre **Beneficios Estatales [S06]**. Agendaré esto para que tu profesional de acompañamiento lo revise contigo. ¿En qué ramo o beneficio necesitas más apoyo?"
-                    ss.hist.append({"role": "assistant", "content": resp_amarilla})
-                    registrar_caso(pid, ss.becado_perfil["nombre"], "AMARILLA", user_msg, "S02", f"Dificultad académica o de trámite ({m_gat}): derivar a apoyo CAI o asistente social.", "Canal Confidencial")
-
                 elif ss.turno >= MAX_TURNOS:
                     ss.hist.append({"role": "assistant", "content": "Hemos conversado bastante por ahora. Puedes presionar **Terminar y ver resumen** para guardar tus orientaciones."})
                 else:
-                    # Llamada a IA
+                    # 2. Detectar si el mensaje activa Alerta Naranja (48h) o Amarilla para la bandeja del equipo
+                    if PATRON_NARANJA.search(user_msg):
+                        m_gat = PATRON_NARANJA.search(user_msg).group(0)
+                        DEMO["chat"][f"{pid}_{ss.turno}"] = f"Gracias por compartirlo, {ss.becado_perfil['nombre']}. Lo que me cuentas sobre '{m_gat}' es muy importante. En Fundación Puente no estás solo(a): contamos con la **Beca Mensual [S01]**, **Becas de Emergencia [S04]** y **Residencia [S05]**. Dejaré un aviso prioritario para que una profesional de la fundación te contacte en **menos de 48 horas**. ¿Te gustaría agregar algo más?"
+                        registrar_caso(pid, ss.becado_perfil["nombre"], "NARANJA", user_msg, "S04", f"Situación crítica económica/habitacional ({m_gat}): requiere contacto en 48 horas.", "Canal Confidencial")
+                    elif PATRON_AMARILLA.search(user_msg):
+                        m_gat = PATRON_AMARILLA.search(user_msg).group(0)
+                        DEMO["chat"][f"{pid}_{ss.turno}"] = f"Te entiendo, {ss.becado_perfil['nombre']}. Problemas con '{m_gat}' son comunes en el inicio de la carrera. Tenemos las **Tutorías del CAI [S02]** y orientación sobre **Beneficios Estatales [S06]**. Agendaré esto para que tu profesional de acompañamiento lo revise contigo. ¿En qué ramo o beneficio necesitas más apoyo?"
+                        registrar_caso(pid, ss.becado_perfil["nombre"], "AMARILLA", user_msg, "S02", f"Dificultad académica o de trámite ({m_gat}): derivar a apoyo CAI o asistente social.", "Canal Confidencial")
+
+                    # 3. Llamada real a la IA (Claude Haiku 5.5 / Groq / Mistral / OpenAI, con respaldo a DEMO si no hay clave)
                     sistema = REGLAS.format(catalogo=S.texto(catalogo)) + "\n\n" + N.personalizacion(cfg)
                     with st.spinner("Puente Contigo está redactando…"):
                         texto, info = ia.llamar([{"role": "system", "content": sistema}] + ss.hist, "chat", f"{pid}_{ss.turno}", temperatura=0.4, max_tokens=320)

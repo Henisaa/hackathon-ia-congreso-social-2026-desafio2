@@ -1,4 +1,6 @@
 {
+  "$schema": "https://json.schemastore.org/web-manifest-combined.json",
+  "id": "/",
   "name": "Puente Contigo · Fundación Puente",
   "short_name": "Puente Contigo",
   "description": "Apoyo, orientación universitaria y beneficios para becados de primer año de Fundación Puente.",
@@ -8,18 +10,56 @@
   "orientation": "portrait",
   "background_color": "#FAF8F6",
   "theme_color": "#9F1127",
+  "lang": "es-CL",
+  "dir": "ltr",
+  "categories": ["education", "social", "lifestyle"],
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Canal Confidencial IA",
+      "short_name": "Canal IA",
+      "description": "Conversa de forma segura y confidencial con tu asistente de Fundación Puente",
+      "url": "/?tab=canal",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mis Beneficios",
+      "short_name": "Beneficios",
+      "description": "Revisa becas, CAI, alimentación y beneficios compatibles",
+      "url": "/?tab=beneficios",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mi Ficha Única",
+      "short_name": "Ficha",
+      "description": "Revisa tus antecedentes, fuentes verificadas y solicita rectificaciones",
+      "url": "/?tab=ficha",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

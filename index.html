@@ -2,16 +2,21 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Puente Contigo · Fundación Puente</title>
     
     <!-- Meta tags PWA -->
     <meta name="theme-color" content="#9F1127" />
     <meta name="description" content="Apoyo, orientación universitaria y beneficios para becados de primer año de Fundación Puente." />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Puente Contigo" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
+    
+    <!-- Favicon e Íconos PWA -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="shortcut icon" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
 
     <!-- Google Fonts oficiales de Fundación Puente -->
@@ -26,9 +31,23 @@
       // Registro de Service Worker para PWA instalable
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(err => {
-            console.log('SW registration note:', err);
-          });
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => {
+              // Comprobar actualizaciones periódicamente
+              reg.onupdatefound = () => {
+                const installingWorker = reg.installing;
+                if (installingWorker) {
+                  installingWorker.onstatechange = () => {
+                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                      console.log('[PWA] Nueva versión de Puente Contigo disponible');
+                    }
+                  };
+                }
+              };
+            })
+            .catch(err => {
+              console.log('[PWA] Service Worker registration:', err);
+            });
         });
       }
     </script>

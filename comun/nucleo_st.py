@@ -580,16 +580,55 @@ def personalizacion(cfg: dict) -> str:
             f"(\"{cfg.get('tono', '')}\") y el largo indicado. El tono cambia CÓMO lo dices, nunca los datos ni las reglas fijas.")
 
 # ------------------------------------------------------------------ IA
+def _cargar_dotenv():
+    """Carga variables desde .env en la raíz si existe (para compatibilidad local y con despliegues que usan .env)."""
+    env_path = Path(__file__).resolve().parent.parent / ".env"
+    if env_path.exists():
+        for line in env_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            k, v = k.strip(), v.strip().strip('"').strip("'")
+            if k and k not in os.environ:
+                os.environ[k] = v
+
 class IA:
     def __init__(self, respuestas_demo: dict | None = None):
-        self.orden = [str(p) for p in _secret("ia.orden", ["groq", "mistral", "openai"])]
+        _cargar_dotenv()
+        self.orden = [str(p) for p in _secret("ia.orden", ["anthropic", "groq", "mistral", "openai"])]
+        for p_extra in ("anthropic", "groq", "mistral", "openai", "gemini"):
+            if p_extra not in self.orden:
+                self.orden.append(p_extra)
         self.prov = {}
+        env_map = {
+            "anthropic": ("ANTHROPIC_API_KEY", "CLAUDE_API_KEY", "VITE_ANTHROPIC_API_KEY"),
+            "groq": ("GROQ_API_KEY", "VITE_GROQ_API_KEY"),
+            "mistral": ("MISTRAL_API_KEY",),
+            "openai": ("OPENAI_API_KEY", "VITE_OPENAI_API_KEY"),
+            "gemini": ("GEMINI_API_KEY",),
+        }
+        generic_key = os.environ.get("AI_API_KEY") or os.environ.get("VITE_AI_API_KEY") or os.environ.get("API_KEY") or ""
+        custom_model = os.environ.get("AI_MODEL") or os.environ.get("ANTHROPIC_MODEL") or os.environ.get("MODEL") or ""
         for p in self.orden:
             base = PROVEEDORES.get(p, {"url": "", "modelos": []})
             modelos = _secret(f"ia.{p}.modelos")
             if not modelos:  # formato anterior: modelo + modelo_respaldo
-                modelos = [m for m in (_secret(f"ia.{p}.modelo"), _secret(f"ia.{p}.modelo_respaldo")) if m] or base["modelos"]
-            self.prov[p] = {"clave": str(_secret(f"ia.{p}.api_key", "") or ""), "url": _secret(f"ia.{p}.url", base["url"]),
+                modelos = [m for m in (_secret(f"ia.{p}.modelo"), _secret(f"ia.{p}.modelo_respaldo")) if m] or list(base["modelos"])
+            if custom_model and p == "anthropic" and custom_model not in modelos:
+                modelos = [custom_model] + list(modelos)
+            clave = str(_secret(f"ia.{p}.api_key", "") or "").strip()
+            if not clave:
+                for env_name in env_map.get(p, ()):
+                    if os.environ.get(env_name):
+                        clave = os.environ[env_name].strip()
+                        break
+            if not clave and generic_key:
+                if (p == "anthropic" and generic_key.startswith("sk-ant")) or \
+                   (p == "groq" and generic_key.startswith("gsk_")) or \
+                   (p == "openai" and generic_key.startswith("sk-") and not generic_key.startswith("sk-ant")):
+                    clave = generic_key
+            self.prov[p] = {"clave": clave, "url": _secret(f"ia.{p}.url", base["url"]),
                             "modelos": [str(m) for m in modelos]}
         self.cadena = [(p, m) for p in self.orden if self.prov[p]["clave"] and self.prov[p]["url"] for m in self.prov[p]["modelos"]]
         self.limite = int(_secret("ia.limite_consultas_por_equipo", 120))
@@ -644,8 +683,13 @@ class IA:
 
     @staticmethod
     def _post(c, mensajes, json_mode, temperatura, max_tokens):
-        cuerpo = {"model": c["modelo"], "messages": mensajes, "temperature": temperatura, "max_tokens": max_tokens}
         claude = "anthropic.com" in str(c["url"]) or str(c["modelo"]).startswith("claude")
+        msgs = [dict(m) for m in mensajes]
+        if claude and len(msgs) >= 2 and msgs[0].get("role") == "system" and msgs[1].get("role") == "assistant":
+            # Anthropic exige que el primer mensaje tras 'system' tenga role 'user' (si empieza con 'assistant' devuelve 400).
+            msgs[0]["content"] = f"{msgs[0].get('content', '')}\n\n[Saludo inicial ya enviado: \"{msgs[1].get('content', '')}\"]"
+            msgs.pop(1)
+        cuerpo = {"model": c["modelo"], "messages": msgs, "temperature": temperatura, "max_tokens": max_tokens}
         if claude:
             # Claude (API compatible con OpenAI): los modelos nuevos rechazan temperature < 1 y el modo json_object
             # (error 400). Se omiten: el prompt ya pide JSON y extraer_json lo recupera aunque venga entre ```.
