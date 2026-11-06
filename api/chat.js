@@ -66,7 +66,7 @@ export default async function handler(req, res) {
 
     // Si no hay clave configurada en Vercel, responder con respuesta de demostración inteligente
     if (!apiKey) {
-      const demoResponse = getFallbackResponse(messages);
+      const demoResponse = getFallbackResponse(messages, systemPrompt);
       return res.status(200).json({
         content: demoResponse,
         provider: 'demo-local',
@@ -203,7 +203,7 @@ export default async function handler(req, res) {
 
       console.error('Anthropic falló en todos los intentos:', errors.join(' | '));
       return res.status(200).json({
-        content: getFallbackResponse(cleanedMessages),
+        content: getFallbackResponse(cleanedMessages, systemText),
         isDemo: true,
         note: 'Fallback por error de proveedor Anthropic',
         debug: errors
@@ -259,7 +259,7 @@ export default async function handler(req, res) {
       const errText = await apiRes.text();
       console.error('API Error:', errText);
       return res.status(200).json({
-        content: getFallbackResponse(cleanedMessages),
+        content: getFallbackResponse(cleanedMessages, systemText),
         isDemo: true,
         note: 'Fallback por saturación o clave',
         debug: `${apiRes.status}: ${errText.slice(0, 160)}`
@@ -270,7 +270,7 @@ export default async function handler(req, res) {
     const content = (data.choices?.[0]?.message?.content || '').trim();
 
     return res.status(200).json({
-      content: content || getFallbackResponse(cleanedMessages),
+      content: content || getFallbackResponse(cleanedMessages, systemText),
       provider: rawProvider || 'openai-compatible',
       model,
       isDemo: !content
@@ -279,23 +279,27 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Error en /api/chat:', error);
     return res.status(200).json({
-      content: getFallbackResponse(messages),
+      content: getFallbackResponse(messages, systemPrompt),
       isDemo: true,
       error: error.message
     });
   }
 }
 
-function getFallbackResponse(messages) {
+function getFallbackResponse(messages, systemPrompt = '') {
   const lastMsg = (messages[messages.length - 1]?.content || '').toLowerCase();
   
   if (lastMsg.includes('plata') || lastMsg.includes('pasaje') || lastMsg.includes('micro') || lastMsg.includes('comida') || lastMsg.includes('dejar')) {
-    return 'Entiendo que estás pasando por un momento muy pesado económicamente. En Fundación Puente contamos con la **Beca Mensual [S01]**, las **Becas de Emergencia [S04]** y la posibilidad de postular a **Residencia [S05]**. He dejado un aviso prioritario en la bandeja del equipo para que tu profesional te contacte en menos de 48 horas.';
+    return 'Entiendo que estás pasando por un momento muy pesado económicamente. En los registros oficiales de Fundación Puente cuentas con la **Beca Mensual [S01]**, las **Becas de Emergencia [S04]** y la posibilidad de postular a **Residencia [S05]**. He dejado un aviso prioritario en la bandeja del equipo para que tu profesional te contacte en menos de 48 horas.';
   }
   
   if (lastMsg.includes('reprob') || lastMsg.includes('nota') || lastMsg.includes('ramo') || lastMsg.includes('prueba')) {
-    return 'Es completamente normal que la primera etapa universitaria sea desafiante. En el **CAI · Tutorías Académicas [S02]** contamos con voluntarios que te apoyan sin juicios en las materias que más te cuesten. ¿Te gustaría inscribirte en una sesión esta semana?';
+    return 'Es completamente normal que la primera etapa universitaria sea desafiante. En el **CAI · Tutorías Académicas [S02]** de Fundación Puente cuentas con voluntarios que te apoyan sin juicios en las materias que más te cuesten. ¿Te gustaría coordinar una sesión esta semana?';
   }
 
-  return 'Hola, gracias por compartir tu experiencia con Puente Contigo. Como becado de primer año de Fundación Puente cuentas con toda nuestra red de acompañamiento, el Centro de Atención Integral (CAI) y orientación en becas. ¿En qué trámite o apoyo te gustaría profundizar hoy?';
+  if (lastMsg.includes('beca') || lastMsg.includes('arancel') || lastMsg.includes('dae')) {
+    return 'Para revisar becas y aranceles oficiales, recuerda que la información no verificada en registros oficiales debe validarse directamente en la Dirección de Asuntos Estudiantiles (DAE) de tu institución y con tu trabajadora social de Fundación Puente a través del apoyo [S01].';
+  }
+
+  return 'Hola, gracias por compartir tu experiencia con Puente Contigo. Como becado de primer año de Fundación Puente cuentas con toda nuestra red de acompañamiento, el Centro de Atención Integral (CAI [S02]) y orientación en becas [S01]. ¿En qué apoyo verificado te gustaría profundizar hoy?';
 }

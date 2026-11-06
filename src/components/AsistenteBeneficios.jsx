@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { clasificarBeneficios } from '../services/catalogoData';
-import { CheckCircle, Clock, AlertCircle, Sparkles, Send } from 'lucide-react';
+import { IES_KNOWLEDGE_BASE, resolverInstitucion, obtenerUrgenciaIES } from '../services/iesKnowledgeBase';
+import { CheckCircle, Clock, AlertCircle, Sparkles, Send, Building, Phone, Mail, Globe, ShieldCheck, HeartPulse, GraduationCap, ChevronRight } from 'lucide-react';
 
 export default function AsistenteBeneficios({ becadoPerfil, setBecadoPerfil, agregarCasoBandeja }) {
   const [mensajeExito, setMensajeExito] = useState('');
   const [formAbierto, setFormAbierto] = useState(false);
+  const [pestañaIES, setPestañaIES] = useState('becas');
 
   const beneficiosClasificados = clasificarBeneficios(becadoPerfil);
+  const iesActual = resolverInstitucion(becadoPerfil.institucion) || IES_KNOWLEDGE_BASE[0];
 
   const handlePostular = (beneficio) => {
     agregarCasoBandeja({
@@ -44,20 +47,27 @@ export default function AsistenteBeneficios({ becadoPerfil, setBecadoPerfil, agr
             <h4 style={{ fontSize: '0.92rem', marginBottom: '10px', color: '#9F1127' }}>Mi situación universitaria:</h4>
             <div className="grid-cols-3" style={{ marginBottom: '12px' }}>
               <div>
-                <label style={{ fontSize: '0.82rem', fontWeight: '600' }}>Institución:</label>
+                <label style={{ fontSize: '0.82rem', fontWeight: '600' }}>Institución (19 IES RM Verificadas):</label>
                 <select
                   value={becadoPerfil.institucion}
                   onChange={(e) => setBecadoPerfil({ ...becadoPerfil, institucion: e.target.value })}
                   style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #D1D5DB', marginTop: '4px' }}
                 >
-                  <option value="Duoc UC San Joaquín">Duoc UC San Joaquín</option>
-                  <option value="INACAP Santiago Centro">INACAP Santiago Centro</option>
-                  <option value="Universidad Central">Universidad Central</option>
-                  <option value="Santo Tomás Santiago">Santo Tomás Santiago</option>
-                  <option value="Duoc UC Maipú">Duoc UC Maipú</option>
-                  <option value="IP Chile">IP Chile</option>
-                  <option value="Universidad de Chile">Universidad de Chile</option>
-                  <option value="Pontificia Universidad Católica">Pontificia Universidad Católica</option>
+                  <optgroup label="Universidades">
+                    {IES_KNOWLEDGE_BASE.filter(i => i.categoria === 'Universidad').map(i => (
+                      <option key={i.id} value={i.nombre}>{i.nombre}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Institutos Profesionales (IP)">
+                    {IES_KNOWLEDGE_BASE.filter(i => i.categoria === 'Instituto Profesional' || i.id === 'duoc').map(i => (
+                      <option key={i.id} value={i.nombre}>{i.nombre}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Centros de Formación Técnica (CFT)">
+                    {IES_KNOWLEDGE_BASE.filter(i => i.categoria === 'Centro de Formación Técnica' || i.id === 'cft_santo_tomas').map(i => (
+                      <option key={i.id} value={i.nombre}>{i.nombre}</option>
+                    ))}
+                  </optgroup>
                 </select>
               </div>
 
@@ -211,6 +221,169 @@ export default function AsistenteBeneficios({ becadoPerfil, setBecadoPerfil, agr
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Sección Verificada: Beneficios y Apoyos Propios de la IES */}
+      <div className="card" style={{ marginTop: '24px', borderTop: '4px solid #9F1127' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Building size={20} color="#9F1127" />
+              <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#1F2937' }}>
+                Apoyos y Beneficios Propios: <b>{iesActual.nombre}</b>
+              </h3>
+              <span className="badge badge-gray">{iesActual.categoria} · {iesActual.tipo}</span>
+            </div>
+            <p style={{ margin: '4px 0 0 0', fontSize: '0.84rem', color: '#4B5563' }}>
+              Base oficial extraída del documento auditado para 19 IES RM. Se descarta cualquier dato no verificado para prevenir información falsa.
+            </p>
+          </div>
+
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '4px 10px', borderRadius: '20px', fontSize: '0.78rem', color: '#065F46', fontWeight: '600' }}>
+            <ShieldCheck size={14} color="#059669" />
+            <span>Datos Oficiales Auditados · Cero Alucinación</span>
+          </div>
+        </div>
+
+        {/* Pestañas de la Institución */}
+        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #E5E7EB', paddingBottom: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setPestañaIES('becas')}
+            className={pestañaIES === 'becas' ? 'btn-primary' : 'btn-secondary'}
+            style={{ fontSize: '0.82rem', padding: '6px 14px' }}
+          >
+            💰 Becas Internas ({iesActual.becas_economicas?.length || 0})
+          </button>
+          <button
+            onClick={() => setPestañaIES('acomp')}
+            className={pestañaIES === 'acomp' ? 'btn-primary' : 'btn-secondary'}
+            style={{ fontSize: '0.82rem', padding: '6px 14px' }}
+          >
+            🧑‍🏫 Acompañamiento Académico ({iesActual.programas_acompanamiento?.length || 0})
+          </button>
+          <button
+            onClick={() => setPestañaIES('salud')}
+            className={pestañaIES === 'salud' ? 'btn-primary' : 'btn-secondary'}
+            style={{ fontSize: '0.82rem', padding: '6px 14px' }}
+          >
+            🏥 Bienestar y Urgencias ({iesActual.bienestar_salud_emergencia?.length || 0})
+          </button>
+          <button
+            onClick={() => setPestañaIES('contacto')}
+            className={pestañaIES === 'contacto' ? 'btn-primary' : 'btn-secondary'}
+            style={{ fontSize: '0.82rem', padding: '6px 14px' }}
+          >
+            📞 Canales DAE y Atención
+          </button>
+        </div>
+
+        {/* Contenido Pestaña Becas */}
+        {pestañaIES === 'becas' && (
+          <div className="grid-cols-2" style={{ gap: '14px' }}>
+            {iesActual.becas_economicas?.map((b, idx) => (
+              <div key={idx} style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '10px', padding: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                  <h4 style={{ margin: 0, color: '#9F1127', fontSize: '0.98rem' }}>{b.nombre}</h4>
+                  <span className="badge badge-red" style={{ fontSize: '0.7rem' }}>Beca Institucional</span>
+                </div>
+                <p style={{ fontSize: '0.84rem', color: '#374151', margin: '4px 0 8px 0' }}>{b.descripcion}</p>
+                
+                <div style={{ fontSize: '0.8rem', color: '#1E40AF', background: '#EFF6FF', padding: '6px 8px', borderRadius: '6px', marginBottom: '6px' }}>
+                  <b>Cobertura:</b> {b.cobertura}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#4B5563', marginBottom: '4px' }}>
+                  <b>Requisitos:</b> {b.requisitos}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: b.proceso.includes('No disponible') ? '#B45309' : '#047857', marginBottom: '10px' }}>
+                  <b>Proceso de postulación:</b> {b.proceso}
+                  {b.proceso.includes('No disponible') && ' (Consultar en DAE)'}
+                </div>
+
+                <button
+                  onClick={() => handlePostular({ id: `IES-${idx}`, nombre: `${b.nombre} (${iesActual.nombre})`, tipo_origen: iesActual.nombre })}
+                  className="btn-secondary"
+                  style={{ width: '100%', fontSize: '0.8rem', padding: '6px' }}
+                >
+                  🙋 Ayúdame a consultar esta beca con mi profesional
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Contenido Pestaña Acompañamiento */}
+        {pestañaIES === 'acomp' && (
+          <div className="grid-cols-2" style={{ gap: '14px' }}>
+            {iesActual.programas_acompanamiento?.map((p, idx) => (
+              <div key={idx} style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '10px', padding: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                  <h4 style={{ margin: 0, color: '#166534', fontSize: '0.98rem' }}>{p.nombre}</h4>
+                  <span className="badge badge-green" style={{ fontSize: '0.7rem' }}>{p.tipo}</span>
+                </div>
+                <p style={{ fontSize: '0.84rem', color: '#374151', margin: '4px 0 8px 0' }}>{p.descripcion}</p>
+                <div style={{ fontSize: '0.8rem', color: '#065F46', background: '#F0FDF4', padding: '6px 8px', borderRadius: '6px' }}>
+                  <b>Canal de acceso oficial:</b> {p.canal}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Contenido Pestaña Salud y Urgencias */}
+        {pestañaIES === 'salud' && (
+          <div className="grid-cols-2" style={{ gap: '14px' }}>
+            {iesActual.bienestar_salud_emergencia?.map((s, idx) => (
+              <div key={idx} style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '10px', padding: '14px' }}>
+                <h4 style={{ margin: '0 0 6px 0', color: '#B45309', fontSize: '0.98rem' }}>{s.nombre}</h4>
+                <p style={{ fontSize: '0.84rem', color: '#374151', margin: '0 0 8px 0' }}>{s.descripcion}</p>
+                <div style={{ fontSize: '0.8rem', color: '#92400E', background: '#FEF3C7', padding: '6px 8px', borderRadius: '6px' }}>
+                  <b>Procedimiento:</b> {s.procedimiento}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Contenido Pestaña Contactos DAE */}
+        {pestañaIES === 'contacto' && (
+          <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '10px', padding: '18px' }}>
+            <h4 style={{ margin: '0 0 12px 0', color: '#1F2937', fontSize: '1rem' }}>
+              📍 Canales Oficiales DAE · {iesActual.nombre}
+            </h4>
+            <div className="grid-cols-2" style={{ gap: '14px' }}>
+              {(iesActual.contactos_dae?.telefono || iesActual.contactos_dae?.telefono_nacional) && (
+                <div style={{ background: '#FFFFFF', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#6B7280' }}>Teléfono Directo:</div>
+                  <div style={{ fontWeight: '700', color: '#1F2937' }}>{iesActual.contactos_dae.telefono || iesActual.contactos_dae.telefono_nacional}</div>
+                </div>
+              )}
+              {(iesActual.contactos_dae?.email || iesActual.contactos_dae?.correo) && (
+                <div style={{ background: '#FFFFFF', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#6B7280' }}>Correo Electrónico:</div>
+                  <div style={{ fontWeight: '700', color: '#1F2937' }}>{iesActual.contactos_dae.email || iesActual.contactos_dae.correo}</div>
+                </div>
+              )}
+              {(iesActual.contactos_dae?.mesa_central || iesActual.contactos_dae?.mesa_servicios) && (
+                <div style={{ background: '#FFFFFF', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#6B7280' }}>Mesa Central / Servicios:</div>
+                  <div style={{ fontWeight: '700', color: '#1F2937' }}>{iesActual.contactos_dae.mesa_central || iesActual.contactos_dae.mesa_servicios}</div>
+                </div>
+              )}
+              {obtenerUrgenciaIES(iesActual) && (
+                <div style={{ background: '#FEF2F2', padding: '10px 12px', borderRadius: '8px', border: '1px solid #FCA5A5' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#991B1B', fontWeight: '700' }}>🚨 Línea de Urgencia / Emergencia:</div>
+                  <div style={{ fontWeight: '800', color: '#DC2626', fontSize: '1rem' }}>{obtenerUrgenciaIES(iesActual)}</div>
+                </div>
+              )}
+              {(iesActual.contactos_dae?.portal || iesActual.contactos_dae?.sede_principal) && (
+                <div style={{ background: '#FFFFFF', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', gridColumn: 'span 2' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#6B7280' }}>Portal o Atención Presencial:</div>
+                  <div style={{ fontWeight: '600', color: '#1F2937' }}>{iesActual.contactos_dae.portal || iesActual.contactos_dae.sede_principal}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

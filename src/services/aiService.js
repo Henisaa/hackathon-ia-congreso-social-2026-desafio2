@@ -1,5 +1,7 @@
 // Servicio de Inteligencia Artificial conectado con Vercel (/api/chat) y fallback cliente
 import { CATALOGO_SERVICIOS } from './catalogoData.js';
+import { resolverInstitucion, obtenerUrgenciaIES } from './iesKnowledgeBase.js';
+import { recuperarContextoRAG, construirSystemPromptRAG, generarRespuestaExtractivaRAG } from './ragService.js';
 
 // Expresiones regulares de salvaguardas éticas y semáforo chileno ampliado
 export const PATRON_CRISIS = /(suicid|matarme|quitarme la vida|no quiero (seguir )?viv|no (le )?veo sentido a (la vida|vivir)|desaparecer para siempre|hacerme da[ñn]o|autolesi|cortarme|terminar con todo|me quiero morir|violencia (familiar|intrafamiliar|en mi casa|dom[eé]stica)|me pega|me golpea|me maltrata|abus[oa]|violaci|no doy m[aá]s|angustia extrema|desesperad[oa]|no puedo m[aá]s con esto|desesperaci[oó]n|crisis (vital|emocional|de p[aá]nico)|colapsar|no aguanto m[aá]s|amenaza)/i;
@@ -98,32 +100,63 @@ export async function enviarMensajeIA(messages, becadoInfo = {}, alertaPrevia = 
   // 1. Evaluación del Semáforo en Tiempo Real con preservación de severidad y cita previa
   const semaforo = evaluarSemaforo(lastUserMsg, alertaPrevia, frasePrevia);
 
-  // Verificación ética de crisis vital
+  // 2. Recuperación RAG Oficial (Closed-World) sobre las 19 IES y Fundación Puente
+  const resultadoRAG = recuperarContextoRAG(lastUserMsg, becadoInfo);
+  const iesEstudiante = resultadoRAG.institucionDetectada || resolverInstitucion(becadoInfo?.institucion || '');
+
+  // Verificación ética de crisis vital con enriquecimiento de fonos oficiales
   if (semaforo.alerta === 'ROJA' && (PATRON_CRISIS.test(lastUserMsg) || alertaPrevia === 'ROJA')) {
+    let msgCrisis = MENSAJE_CRISIS;
+    const fuentesCrisis = [
+      {
+        institucion: 'Ministerio de Salud de Chile',
+        titulo: 'Línea Prevención del Suicidio *4141',
+        tipo: 'linea_urgencia_nacional',
+        fuenteOficial: 'MINSAL Chile',
+        contacto: 'Marcar *4141 (gratuito 24/7 desde celulares)'
+      },
+      {
+        institucion: 'Ministerio de Salud de Chile',
+        titulo: 'Salud Responde 600 360 7777',
+        tipo: 'linea_urgencia_nacional',
+        fuenteOficial: 'MINSAL Chile',
+        contacto: '600 360 7777 (24/7)'
+      },
+      {
+        institucion: 'SAMU Chile',
+        titulo: 'SAMU 131',
+        tipo: 'linea_urgencia_nacional',
+        fuenteOficial: 'SAMU Minsal',
+        contacto: '131 (Emergencias vitales)'
+      }
+    ];
+
+    const urgenciaInstFono = obtenerUrgenciaIES(iesEstudiante);
+    if (urgenciaInstFono) {
+      msgCrisis += `\n• En tu institución (${iesEstudiante.nombre}) cuentas además con la línea de urgencia y orientación: **${urgenciaInstFono}**.`;
+      fuentesCrisis.push({
+        institucion: iesEstudiante.nombre,
+        titulo: `Línea de Urgencia Institucional · ${iesEstudiante.nombre}`,
+        tipo: 'urgencia_institucional',
+        fuenteOficial: `Protocolo Oficial de Bienestar ${iesEstudiante.nombre}`,
+        contacto: urgenciaInstFono
+      });
+    }
+
     return {
-      content: MENSAJE_CRISIS,
+      content: msgCrisis,
       alerta: 'ROJA',
       gatillante: semaforo.gatillante,
       servicioSugerido: 'S03',
       provider: 'protocolo-crisis',
-      isCrisis: true
+      isCrisis: true,
+      fuentesRAG: fuentesCrisis,
+      institucionRAG: iesEstudiante
     };
   }
 
-  // 2. Preparar System Prompt Institucional y normalizar mensajes (primer mensaje = user)
-  const catalogoTexto = CATALOGO_SERVICIOS.map(
-    (s) => `- [${s.id}] ${s.nombre} (${s.tipo_origen}): ${s.para_que_sirve}. Cómo acceder: ${s.como_acceder}`
-  ).join('\n');
-
-  let systemPrompt = `Eres "Puente Contigo", asistente virtual de apoyo y orientación para becados de primer año de Fundación Puente en Chile.
-Tu misión: acompañar con calidez, orientar sobre la vida universitaria y recomendar apoyos reales del catálogo verificado.
-REGLAS FIJAS OBLIGATORIAS:
-1. No eres psicólogo: no diagnosticas ni usas rótulos clínicos.
-2. Tutea con calidez en español chileno respetuoso ("tú", no voseo). Máximo 3 frases por respuesta.
-3. Menciona SOLO servicios del catálogo verificado con su código entre corchetes, ej. [S01] o [S02].
-4. En beneficios, di siempre "podrías optar" o "podrías postular", nunca afirmes derechos garantizados.
-Catálogo:
-${catalogoTexto}`;
+  // 3. Preparar System Prompt RAG Estricto (Closed-World Assumption)
+  let systemPrompt = construirSystemPromptRAG(becadoInfo, resultadoRAG);
 
   // Asegurar que la secuencia de mensajes comience con role: 'user' (requerido por Claude Haiku 5.5)
   const normalizedMessages = [];
@@ -137,7 +170,7 @@ ${catalogoTexto}`;
     normalizedMessages.push({ role, content: String(m.content) });
   }
 
-  // 3. Llamar al backend serverless de Vercel (/api/chat)
+  // 4. Llamar al backend serverless de Vercel (/api/chat)
   try {
     const response = await fetch('/api/chat', {
       method: 'POST',
@@ -145,8 +178,8 @@ ${catalogoTexto}`;
       body: JSON.stringify({
         messages: normalizedMessages,
         systemPrompt,
-        temperature: 0.4,
-        maxTokens: 350
+        temperature: 0.2, // Temperatura baja para evitar alucinaciones
+        maxTokens: 400
       })
     });
 
@@ -167,7 +200,9 @@ ${catalogoTexto}`;
           servicioSugerido: semaforo.servicioSugerido,
           provider: data.provider || 'vercel-serverless',
           model: data.model || 'claude-haiku-5-5',
-          isDemo: data.isDemo || false
+          isDemo: data.isDemo || false,
+          fuentesRAG: resultadoRAG.fuentesCitas,
+          institucionRAG: iesEstudiante
         };
       }
     }
@@ -175,7 +210,7 @@ ${catalogoTexto}`;
     console.log('Llamada a /api/chat no disponible, verificando clave cliente:', err);
   }
 
-  // 4. Fallback directo en cliente si existen variables VITE_*
+  // 5. Fallback directo en cliente si existen variables VITE_*
   const rawClientKey =
     import.meta.env?.VITE_ANTHROPIC_API_KEY ||
     import.meta.env?.VITE_AI_API_KEY ||
@@ -205,10 +240,10 @@ ${catalogoTexto}`;
       const bodyPayload = {
         model,
         messages: [{ role: 'system', content: systemPrompt }, ...normalizedMessages],
-        max_tokens: 350
+        max_tokens: 400
       };
       if (!isAnthropic) {
-        bodyPayload.temperature = 0.4;
+        bodyPayload.temperature = 0.2;
       }
 
       const clientRes = await fetch(url, {
@@ -231,7 +266,9 @@ ${catalogoTexto}`;
             servicioSugerido: semaforo.servicioSugerido,
             provider: isAnthropic ? 'anthropic-client' : 'openai-client',
             model,
-            isDemo: false
+            isDemo: false,
+            fuentesRAG: resultadoRAG.fuentesCitas,
+            institucionRAG: iesEstudiante
           };
         }
       }
@@ -240,22 +277,18 @@ ${catalogoTexto}`;
     }
   }
 
-  // 5. Fallback simulado de demostración (Garantía de cero caídas en demo)
-  let demoTexto = `Hola ${becadoInfo.nombre || ''}, gracias por contármelo. Adaptarse al primer año universitario tiene muchos desafíos. En Fundación Puente cuentas con el **CAI · Tutorías Académicas [S02]** y la **Beca Mensual [S01]** para acompañarte. ¿Te gustaría que revisemos alguna materia o trámite específico?`;
-
-  if (semaforo.alerta === 'NARANJA') {
-    demoTexto = `Hola ${becadoInfo.nombre || ''}, entiendo lo angustiante que es no contar con recursos para la locomoción o comida. En Fundación Puente tenemos la **Beca Mensual [S01]** y las **Becas de Emergencia [S04]**. Dejaré un aviso prioritario en la bandeja del equipo para que tu trabajadora social te contacte en **menos de 48 horas**. ¿Hay algo más que quieras compartirme?`;
-  } else if (semaforo.alerta === 'AMARILLA') {
-    demoTexto = `Comprendo que te preocupe esa evaluación o trámite, ${becadoInfo.nombre || ''}. Que ocurran dificultades en el primer semestre es muy frecuente. Con el **CAI · Tutorías Académicas [S02]** podemos apoyarte sin juicios, y con **Beneficios Estatales [S06]** podemos revisar tu apelación. ¿Te gustaría coordinar una tutoría?`;
-  }
+  // 6. Generador Extractivo RAG Determinista (Garantía de Cero Alucinaciones en Demostración u Offline)
+  const extractivaTexto = tutear(generarRespuestaExtractivaRAG(lastUserMsg, becadoInfo, resultadoRAG));
 
   return {
-    content: demoTexto,
+    content: extractivaTexto,
     alerta: semaforo.alerta,
     gatillante: semaforo.gatillante,
     servicioSugerido: semaforo.servicioSugerido,
-    provider: 'demo-local',
-    model: 'simulacion-hackathon',
-    isDemo: true
+    provider: 'rag-extractivo-local',
+    model: 'verificado-19-ies-rm',
+    isDemo: true,
+    fuentesRAG: resultadoRAG.fuentesCitas,
+    institucionRAG: iesEstudiante
   };
 }

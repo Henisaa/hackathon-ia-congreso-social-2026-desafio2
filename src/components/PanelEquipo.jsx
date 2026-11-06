@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ESTUDIANTES_COHORTE } from '../services/estudiantesData';
 import { CATALOGO_SERVICIOS } from '../services/catalogoData';
-import { AlertCircle, CheckCircle, Clock, ShieldCheck, Sparkles, UserCheck, MessageSquare, Filter, Check } from 'lucide-react';
+import { resolverInstitucion, obtenerUrgenciaIES } from '../services/iesKnowledgeBase';
+import { AlertCircle, CheckCircle, Clock, ShieldCheck, Sparkles, UserCheck, MessageSquare, Filter, Check, Building, BookOpen } from 'lucide-react';
 
 export default function PanelEquipo({ bandejaCasos, actualizarDecisionCaso }) {
   const [casoSeleccionado, setCasoSeleccionado] = useState(bandejaCasos[0]?.caso || null);
@@ -93,44 +94,71 @@ export default function PanelEquipo({ bandejaCasos, actualizarDecisionCaso }) {
       const carrera = estudianteActual.carrera || 'su carrera';
       const cita = estudianteActual.frase_gatillante ? ` Declaró textualmente: "${estudianteActual.frase_gatillante}".` : '';
 
+      // Recuperar apoyos oficiales de la IES del estudiante vía RAG
+      const iesObj = resolverInstitucion(estudianteActual.institucion || '');
+      const instNombre = iesObj?.nombre || estudianteActual.institucion || 'su casa de estudios';
+      const cDae = iesObj?.contactos_dae || {};
+      const fonoUrgRaw = obtenerUrgenciaIES(iesObj);
+      const fonoUrgenciaIES = fonoUrgRaw ? `🚨 Urgencia/Crisis ${iesObj.nombre}: ${fonoUrgRaw}` : null;
+      const becaTopIES = iesObj?.becas_economicas?.[0] ? `🏛️ ${iesObj.becas_economicas[0].nombre} (${iesObj.nombre})` : null;
+      const progAcompIES = iesObj?.programas_acompanamiento?.[0] ? `🏛️ ${iesObj.programas_acompanamiento[0].nombre} (${iesObj.nombre})` : null;
+      const contactoDaeTxt = cDae.telefono || cDae.mesa_central || cDae.email ? `📞 DAE ${iesObj.nombre}: ${cDae.telefono || cDae.mesa_central || cDae.email}` : null;
+
       if (alerta === 'ROJA') {
+        const apoyosRoja = [
+          '[S03] CAI · Servicios Psicosociales (Salud Mental, Contención y Legal)',
+          'Línea Prevención *4141 / SAMU 131 (Protocolo Nacional de Crisis Inmediato)'
+        ];
+        if (fonoUrgenciaIES) apoyosRoja.push(fonoUrgenciaIES);
+        else if (contactoDaeTxt) apoyosRoja.push(contactoDaeTxt);
+        apoyosRoja.push('[S04] Becas Complementarias de Emergencia y Red de Protección');
+
         setBorradorCopiloto({
-          sintesis: `ALERTA ROJA INMEDIATA: ${nombre} cursa primer año de ${carrera} en ${estudianteActual.institucion}.${cita} Presenta situación de angustia extrema/violencia que requiere activar de inmediato el protocolo de apoyo psicosocial humano prioritario sin demora.`,
-          apoyos: [
-            '[S03] CAI · Servicios Psicosociales (Salud Mental, Contención y Legal)',
-            'Línea Prevención *4141 / SAMU 131 (Protocolo de Crisis Inmediato)',
-            '[S04] Becas Complementarias de Emergencia y Red de Protección'
-          ],
+          sintesis: `ALERTA ROJA INMEDIATA (RAG Verificado): ${nombre} cursa primer año de ${carrera} en ${instNombre}.${cita} Presenta situación de angustia extrema/violencia que requiere activar de inmediato el protocolo de apoyo psicosocial humano prioritario sin demora.`,
+          apoyos: apoyosRoja,
+          iesVerificada: instNombre,
           borrador: `Hola ${nombre}, te escribo con mucha cercanía y respeto desde Fundación Puente. Leí lo que nos compartiste y queremos que sepas que no estás sola/o y que cuentas con todo nuestro equipo para apoyarte. Nos gustaría llamarte hoy mismo para escucharte y coordinar apoyo prioritario y voluntario con nuestra psicóloga y trabajadora social. ¿Podemos hablar unos minutos?`
         });
       } else if (alerta === 'NARANJA') {
+        const apoyosNaranja = [
+          '[S01] Beca Mensual Fundación Puente (Transporte y Alimentación)'
+        ];
+        if (becaTopIES) apoyosNaranja.push(becaTopIES);
+        if (contactoDaeTxt) apoyosNaranja.push(contactoDaeTxt);
+        apoyosNaranja.push('[S04] Becas de Emergencia y Materiales Complementarios');
+        apoyosNaranja.push('[S07] Flexibilidad Académica para Trabajadores y Cuidadores');
+
         setBorradorCopiloto({
-          sintesis: `ALERTA NARANJA (< 48 Horas): ${nombre} reporta dificultades críticas de movilización, alimentación o turnos laborales en ${carrera} (${estudianteActual.jornada}).${cita}`,
-          apoyos: [
-            '[S01] Beca Mensual Fundación Puente (Transporte y Alimentación)',
-            '[S04] Becas de Emergencia y Materiales Complementarios',
-            '[S07] Flexibilidad Académica para Trabajadores y Cuidadores'
-          ],
+          sintesis: `ALERTA NARANJA (< 48 Horas · RAG Verificado): ${nombre} reporta dificultades críticas de movilización, alimentación o turnos laborales en ${carrera} (${instNombre}, jornada ${estudianteActual.jornada || 'diurna'}).${cita}`,
+          apoyos: apoyosNaranja,
+          iesVerificada: instNombre,
           borrador: `Hola ${nombre}, ¿cómo estás? Te escribo de Fundación Puente para saber cómo te has sentido en este inicio de semestre en ${carrera}. Queremos coordinar un momento para conversar si necesitas apoyo con tus turnos, pasajes o alguna materia. Es voluntario y elegimos el horario juntos.`
         });
       } else if (alerta === 'AMARILLA') {
+        const apoyosAmarilla = [
+          '[S02] CAI · Tutorías Académicas y Reforzamiento con Voluntarios'
+        ];
+        if (progAcompIES) apoyosAmarilla.push(progAcompIES);
+        if (contactoDaeTxt) apoyosAmarilla.push(contactoDaeTxt);
+        apoyosAmarilla.push('[S06] Orientación en Beneficios Estatales (FUAS / Gratuidad)');
+        apoyosAmarilla.push('[S08] Actividades Formativas y Talleres de Adaptación');
+
         setBorradorCopiloto({
-          sintesis: `SEGUIMIENTO EN AGENDA: ${nombre} registra inquietudes con evaluaciones, ramos o trámites de beneficios en ${carrera}.${cita}`,
-          apoyos: [
-            '[S02] CAI · Tutorías Académicas y Reforzamiento con Voluntarios',
-            '[S06] Orientación en Beneficios Estatales (FUAS / Gratuidad)',
-            '[S08] Actividades Formativas y Talleres de Adaptación'
-          ],
+          sintesis: `SEGUIMIENTO EN AGENDA (RAG Verificado): ${nombre} registra inquietudes con evaluaciones, ramos o trámites de beneficios en ${carrera} (${instNombre}).${cita}`,
+          apoyos: apoyosAmarilla,
+          iesVerificada: instNombre,
           borrador: `Hola ${nombre}, ¿cómo va tu semana en ${carrera}? Te contacto de Fundación Puente porque sabemos que los primeros certámenes y trámites pueden ser exigentes. Tenemos tutorías gratuitas del CAI que te pueden ayudar mucho. ¿Te gustaría que coordinemos una sesión?`
         });
       } else {
         setBorradorCopiloto({
-          sintesis: `SEGUIMIENTO REGULAR: ${nombre} se encuentra al día con avance académico regular en ${carrera} (${estudianteActual.institucion}).`,
+          sintesis: `SEGUIMIENTO REGULAR (RAG Verificado): ${nombre} se encuentra al día con avance académico regular en ${carrera} (${instNombre}).`,
           apoyos: [
             '[S01] Beca Mensual Fundación Puente',
+            progAcompIES || `Apoyos Académicos ${instNombre}`,
             '[S08] Talleres Formativos y Encuentros de Red',
             '[S02] CAI · Cursos de Inglés eClass'
-          ],
+          ].filter(Boolean),
+          iesVerificada: instNombre,
           borrador: `Hola ${nombre}, un gusto saludarte desde Fundación Puente. Queríamos saber cómo te va en tus ramos y recordarte que están abiertos los talleres formativos y cursos de inglés eClass para becados de primer año.`
         });
       }
@@ -471,7 +499,14 @@ export default function PanelEquipo({ bandejaCasos, actualizarDecisionCaso }) {
                 </h4>
                 <p style={{ fontSize: '0.82rem', color: '#374151', marginBottom: '10px' }}>{borradorCopiloto.sintesis}</p>
 
-                <h4 style={{ fontSize: '0.9rem', color: '#166534', marginBottom: '6px' }}>2. Apoyos Recomendados</h4>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <h4 style={{ fontSize: '0.9rem', color: '#166534', margin: 0 }}>2. Apoyos Recomendados</h4>
+                  {borradorCopiloto.iesVerificada && (
+                    <span style={{ fontSize: '0.68rem', color: '#065F46', background: '#D1FAE5', padding: '2px 8px', borderRadius: '12px', fontWeight: '700' }}>
+                      📚 RAG Oficial {borradorCopiloto.iesVerificada}
+                    </span>
+                  )}
+                </div>
                 <ul style={{ fontSize: '0.82rem', color: '#374151', paddingLeft: '18px', marginBottom: '10px' }}>
                   {borradorCopiloto.apoyos.map((a, i) => (
                     <li key={i} style={{ marginBottom: '3px', fontWeight: i === 0 && estudianteActual.alertaRaw === 'ROJA' ? '700' : 'normal', color: i === 0 && estudianteActual.alertaRaw === 'ROJA' ? '#991B1B' : '#374151' }}>
