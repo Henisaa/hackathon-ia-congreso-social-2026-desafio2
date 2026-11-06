@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { DollarSign, BookOpen, Users, Heart, MapPin, Award, CheckCircle2 } from 'lucide-react';
+import { evaluarSemaforo } from '../services/aiService';
 
 export default function FichaUnica({ becadoPerfil, agregarCasoBandeja }) {
   const [solicitudEnviada, setSolicitudEnviada] = useState(false);
@@ -10,14 +11,19 @@ export default function FichaUnica({ becadoPerfil, agregarCasoBandeja }) {
     e.preventDefault();
     if (!detalleCorreccion.trim()) return;
 
+    // Evaluar éticamente si el estudiante declara una situación urgente en su ficha
+    const semaforo = evaluarSemaforo(detalleCorreccion, 'VERDE');
+
     agregarCasoBandeja({
-      persona_id: 'BECADO-ACTIVO',
+      persona_id: becadoPerfil.id_persona || 'P1',
       estudiante: becadoPerfil.nombre,
       origen: 'Solicitud Becado Ficha',
-      alerta: 'VERDE',
-      frase_gatillante: `Actualización en dimensión ${dimensionCorregir}`,
-      servicio_sugerido: 'Ficha Única',
-      resumen_ia: `El becado solicita actualizar datos en la dimensión ${dimensionCorregir}: "${detalleCorreccion}".`,
+      alerta: semaforo.alerta,
+      frase_gatillante: semaforo.alerta !== 'VERDE' ? detalleCorreccion : `Actualización en dimensión ${dimensionCorregir}`,
+      servicio_sugerido: semaforo.servicioSugerido || 'Ficha Única',
+      resumen_ia: semaforo.alerta === 'ROJA'
+        ? `Declaración de crisis en ficha (${dimensionCorregir}): "${detalleCorreccion}".`
+        : `El becado solicita actualizar datos en la dimensión ${dimensionCorregir}: "${detalleCorreccion}".`,
       conversacion: `Solicitud de corrección de ficha enviada por el estudiante: Dimensión ${dimensionCorregir} -> ${detalleCorreccion}`
     });
 

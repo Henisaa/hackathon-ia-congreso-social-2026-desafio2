@@ -98,10 +98,10 @@ export const PERFILES_SIMULACION = [
 ];
 
 export const ESTUDIANTES_COHORTE = [
-  { id: "EST-00104", institucion: "Duoc UC San Joaquín", carrera: "Técnico en Enfermería", jornada: "Vespertina", promedio: 4.2, asistencia: 72, senales: "trabajo por turnos; baja asistencia reciente", alerta: "🟠 Naranja" },
-  { id: "EST-00219", institucion: "INACAP Santiago Centro", carrera: "Analista Programador", jornada: "Diurna", promedio: 3.5, asistencia: 85, senales: "calificaciones que requieren apoyo; primera generación", alerta: "🟡 Amarilla" },
-  { id: "EST-00342", institucion: "Universidad Central", carrera: "Trabajo Social", jornada: "Diurna", promedio: 5.1, asistencia: 68, senales: "traslado extenso (85 min); arancel pendiente", alerta: "🟡 Amarilla" },
-  { id: "EST-00411", institucion: "Santo Tomás Santiago", carrera: "Técnico en Administración", jornada: "Vespertina", promedio: 4.8, asistencia: 74, senales: "alta carga laboral (35 hrs); cuida dependientes", alerta: "🟠 Naranja" },
-  { id: "EST-00508", institucion: "Duoc UC Maipú", carrera: "Construcción", jornada: "Diurna", promedio: 3.9, asistencia: 70, senales: "evaluaciones pendientes; sin gratuidad", alerta: "🟡 Amarilla" },
-  { id: "EST-00627", institucion: "IP Chile", carrera: "Mecánica Automotriz", jornada: "Vespertina", promedio: 4.0, asistencia: 65, senales: "muchos días sin plataforma; turnos rotativos", alerta: "🟠 Naranja" }
+  { id: "EST-00104", persona_id: "P1", nombre: "Camila", institucion: "Duoc UC San Joaquín", carrera: "Técnico en Enfermería", jornada: "Vespertina", promedio: 4.2, asistencia: 72, senales: "trabajo por turnos; baja asistencia reciente", alerta: "🟠 Naranja" },
+  { id: "EST-00219", persona_id: "P2", nombre: "Diego", institucion: "INACAP Santiago Centro", carrera: "Analista Programador", jornada: "Diurna", promedio: 3.5, asistencia: 85, senales: "calificaciones que requieren apoyo; primera generación", alerta: "🟡 Amarilla" },
+  { id: "EST-00342", persona_id: "P3", nombre: "Valentina", institucion: "Universidad Central", carrera: "Trabajo Social", jornada: "Diurna", promedio: 5.1, asistencia: 68, senales: "angustia reportada; requiere apoyo psicosocial prioritario", alerta: "🔴 Roja" },
+  { id: "EST-00508", persona_id: "P4", nombre: "Matías", institucion: "Duoc UC Maipú", carrera: "Ingeniería en Construcción", jornada: "Diurna", promedio: 3.9, asistencia: 70, senales: "riesgo habitacional informado; evaluando residencia", alerta: "🟠 Naranja" },
+  { id: "EST-00411", persona_id: "P5", nombre: "Javiera", institucion: "Universidad Diego Portales", carrera: "Diseño Gráfico", jornada: "Diurna", promedio: 4.8, asistencia: 74, senales: "dudas vocacionales; trámite de gratuidad/FUAS en curso", alerta: "🟡 Amarilla" },
+  { id: "EST-00627", persona_id: "P6", nombre: "Lucas", institucion: "IP Chile", carrera: "Gastronomía Internacional", jornada: "Vespertina", promedio: 5.8, asistencia: 90, senales: "consulta de cursos de inglés eClass y talleres formativos", alerta: "🟢 Normal" }
 ];

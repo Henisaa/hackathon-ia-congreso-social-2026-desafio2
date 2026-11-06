@@ -14,21 +14,25 @@ const FRASES_DEMO = {
 };
 
 export default function CanalConfidencial({ becadoPerfil, setBecadoPerfil, agregarCasoBandeja, setVistaActual }) {
-  const [perfilSelId, setPerfilSelId] = useState('P1');
-  const [consentimiento, setConsentimiento] = useState(false);
-  const [historial, setHistorial] = useState([]);
+  const [perfilSelId, setPerfilSelId] = useState(() => becadoPerfil?.id_persona || 'P1');
+  const chatInicial = obtenerChatDePerfil(becadoPerfil?.id_persona || 'P1');
+  const [consentimiento, setConsentimiento] = useState(() => chatInicial.consentimiento || false);
+  const [historial, setHistorial] = useState(() => chatInicial.historial || []);
   const [inputMensaje, setInputMensaje] = useState('');
   const [cargando, setCargando] = useState(false);
-  const [alertaActiva, setAlertaActiva] = useState('VERDE');
-  const [fraseGatillante, setFraseGatillante] = useState('');
-  const [servicioSugerido, setServicioSugerido] = useState('S01');
-  const [resumenFinal, setResumenFinal] = useState(null);
+  const [alertaActiva, setAlertaActiva] = useState(() => chatInicial.alertaActiva || 'VERDE');
+  const [fraseGatillante, setFraseGatillante] = useState(() => chatInicial.fraseGatillante || '');
+  const [servicioSugerido, setServicioSugerido] = useState(() => chatInicial.servicioSugerido || 'S01');
+  const [resumenFinal, setResumenFinal] = useState(() => chatInicial.resumenFinal || null);
   const chatBottomRef = useRef(null);
+  const perfilCargadoRef = useRef(perfilSelId);
 
-  // 1. Cargar estado persistente en caché al cambiar o inicializar el perfil
+  // 1. Cargar estado persistente en caché al cambiar el perfil seleccionado
   useEffect(() => {
+    perfilCargadoRef.current = perfilSelId;
     const p = PERFILES_SIMULACION.find(x => x.id_persona === perfilSelId) || PERFILES_SIMULACION[0];
     setBecadoPerfil({
+      id_persona: p.id_persona,
       nombre: p.nombre_ficticio,
       institucion: p.institucion,
       carrera: p.carrera,
@@ -51,8 +55,9 @@ export default function CanalConfidencial({ becadoPerfil, setBecadoPerfil, agreg
     setResumenFinal(guardado.resumenFinal || null);
   }, [perfilSelId]);
 
-  // 2. Guardar en caché cada vez que cambie el historial o el semáforo del perfil
+  // 2. Guardar en caché cada vez que cambie el historial o el semáforo del perfil actual
   useEffect(() => {
+    if (perfilCargadoRef.current !== perfilSelId) return;
     guardarChatDePerfil(perfilSelId, {
       consentimiento,
       historial,
@@ -88,44 +93,70 @@ export default function CanalConfidencial({ becadoPerfil, setBecadoPerfil, agreg
     setCargando(true);
 
     // Evaluación en tiempo real inmediata del Semáforo
-    const semaforoInmediato = evaluarSemaforo(userText, alertaActiva);
-    setAlertaActiva(semaforoInmediato.alerta);
-    if (semaforoInmediato.gatillante) {
-      setFraseGatillante(semaforoInmediato.gatillante);
+    const semaforoInmediato = evaluarSemaforo(userText, alertaActiva, fraseGatillante);
+    const alertaInmediata = semaforoInmediato.alerta;
+    const gatillanteInmediato = semaforoInmediato.gatillante || userText;
+    const servicioInmediato = semaforoInmediato.servicioSugerido;
+
+    setAlertaActiva(alertaInmediata);
+    if (gatillanteInmediato) {
+      setFraseGatillante(gatillanteInmediato);
     }
-    setServicioSugerido(semaforoInmediato.servicioSugerido);
+    setServicioSugerido(servicioInmediato);
+
+    // SINCRONIZACIÓN INMEDIATA: Si activó Alerta ROJA, NARANJA o AMARILLA, notificar a la bandeja ANTES de la llamada a la IA
+    if (['ROJA', 'NARANJA', 'AMARILLA'].includes(alertaInmediata)) {
+      agregarCasoBandeja({
+        persona_id: perfilSelId,
+        estudiante: becadoPerfil.nombre,
+        origen: 'Canal Confidencial',
+        alerta: alertaInmediata,
+        frase_gatillante: gatillanteInmediato,
+        servicio_sugerido: servicioInmediato,
+        resumen_ia:
+          alertaInmediata === 'ROJA'
+            ? 'Señal de crisis vital o violencia detectada: contacto humano urgente.'
+            : alertaInmediata === 'NARANJA'
+            ? 'Riesgo económico o habitacional inminente: contacto en 48 horas.'
+            : 'Dificultad académica o de trámite: derivar a apoyo CAI o asistente social.',
+        conversacion: nuevoHistorial.map(m => `${m.role === 'user' ? becadoPerfil.nombre : 'Puente Contigo'}: ${m.content}`).join('\n')
+      });
+    }
 
     try {
-      const resp = await enviarMensajeIA(nuevoHistorial, becadoPerfil, alertaActiva);
+      const resp = await enviarMensajeIA(nuevoHistorial, becadoPerfil, alertaInmediata, gatillanteInmediato);
 
-      setHistorial([...nuevoHistorial, { role: 'assistant', content: resp.content, isDemo: resp.isDemo }]);
+      const historialConRespuesta = [...nuevoHistorial, { role: 'assistant', content: resp.content, isDemo: resp.isDemo }];
+      setHistorial(historialConRespuesta);
 
-      // Actualizar semáforo con respuesta consolidada
-      const alertaFinal = resp.alerta || semaforoInmediato.alerta;
+      // Consolidar semáforo con respuesta final
+      const alertaFinal = resp.alerta || alertaInmediata;
       setAlertaActiva(alertaFinal);
-      if (resp.gatillante || semaforoInmediato.gatillante) {
-        setFraseGatillante(resp.gatillante || semaforoInmediato.gatillante);
+      const gatillanteFinal = resp.gatillante || gatillanteInmediato;
+      if (gatillanteFinal) {
+        setFraseGatillante(gatillanteFinal);
       }
-      if (resp.servicioSugerido) {
-        setServicioSugerido(resp.servicioSugerido);
+      const servicioFinal = resp.servicioSugerido || servicioInmediato;
+      if (servicioFinal) {
+        setServicioSugerido(servicioFinal);
       }
 
-      // Si activó Alerta ROJA, NARANJA o AMARILLA, sincronizar automáticamente con la bandeja del equipo
+      // Re-sincronizar con el historial completo incluyendo la respuesta de Puente Contigo
       if (['ROJA', 'NARANJA', 'AMARILLA'].includes(alertaFinal)) {
         agregarCasoBandeja({
           persona_id: perfilSelId,
           estudiante: becadoPerfil.nombre,
           origen: 'Canal Confidencial',
           alerta: alertaFinal,
-          frase_gatillante: resp.gatillante || semaforoInmediato.gatillante || userText,
-          servicio_sugerido: resp.servicioSugerido || semaforoInmediato.servicioSugerido || 'S01',
+          frase_gatillante: gatillanteFinal,
+          servicio_sugerido: servicioFinal,
           resumen_ia:
             alertaFinal === 'ROJA'
               ? 'Señal de crisis vital o violencia detectada: contacto humano urgente.'
               : alertaFinal === 'NARANJA'
               ? 'Riesgo económico o habitacional inminente: contacto en 48 horas.'
               : 'Dificultad académica o de trámite: derivar a apoyo CAI o asistente social.',
-          conversacion: nuevoHistorial.map(m => `${m.role === 'user' ? becadoPerfil.nombre : 'Puente Contigo'}: ${m.content}`).join('\n')
+          conversacion: historialConRespuesta.map(m => `${m.role === 'user' ? becadoPerfil.nombre : 'Puente Contigo'}: ${m.content}`).join('\n')
         });
       }
     } catch (err) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ESTUDIANTES_COHORTE } from '../services/estudiantesData';
 import { CATALOGO_SERVICIOS } from '../services/catalogoData';
 import { AlertCircle, CheckCircle, Clock, ShieldCheck, Sparkles, UserCheck, MessageSquare, Filter, Check } from 'lucide-react';
@@ -13,13 +13,68 @@ export default function PanelEquipo({ bandejaCasos, actualizarDecisionCaso }) {
   const [borradorCopiloto, setBorradorCopiloto] = useState(null);
   const [generandoBorrador, setGenerandoBorrador] = useState(false);
 
+  // Enriquecer dinámicamente la cohorte con el estado real de la bandeja de casos
+  const cohorteEnriquecida = ESTUDIANTES_COHORTE.map(est => {
+    const casoAsociado = bandejaCasos.find(c =>
+      (c.persona_id && est.persona_id && c.persona_id === est.persona_id) ||
+      (c.estudiante && est.nombre && c.estudiante.toLowerCase() === est.nombre.toLowerCase())
+    );
+
+    if (casoAsociado) {
+      const alertaTag =
+        casoAsociado.alerta === 'ROJA'
+          ? '🔴 Roja (Inmediata)'
+          : casoAsociado.alerta === 'NARANJA'
+          ? '🟠 Naranja (48 h)'
+          : casoAsociado.alerta === 'AMARILLA'
+          ? '🟡 Amarilla'
+          : '🟢 Normal';
+
+      return {
+        ...est,
+        alerta: alertaTag,
+        alertaRaw: casoAsociado.alerta,
+        casoId: casoAsociado.caso,
+        frase_gatillante: casoAsociado.frase_gatillante,
+        resumen_ia: casoAsociado.resumen_ia,
+        servicio_sugerido: casoAsociado.servicio_sugerido,
+        decision: casoAsociado.decision
+      };
+    }
+
+    return {
+      ...est,
+      alertaRaw: est.alerta.includes('Roja') ? 'ROJA' : est.alerta.includes('Naranja') ? 'NARANJA' : est.alerta.includes('Amarilla') ? 'AMARILLA' : 'VERDE'
+    };
+  });
+
+  // Auto-selección inicial o ante alertas ROJAS críticas entrantes
+  useEffect(() => {
+    const casoUrgenteRoja = bandejaCasos.find(c => c.decision === 'Pendiente' && c.alerta === 'ROJA');
+    if (casoUrgenteRoja) {
+      const actualEsRoja = bandejaCasos.find(c => c.caso === casoSeleccionado && c.alerta === 'ROJA');
+      if (!casoSeleccionado || !actualEsRoja) {
+        setCasoSeleccionado(casoUrgenteRoja.caso);
+        const estAsoc = cohorteEnriquecida.find(x =>
+          (casoUrgenteRoja.persona_id && x.persona_id === casoUrgenteRoja.persona_id) ||
+          (casoUrgenteRoja.estudiante && x.nombre && x.nombre.toLowerCase() === casoUrgenteRoja.estudiante.toLowerCase())
+        );
+        if (estAsoc) {
+          setEstudianteSelId(estAsoc.id);
+        }
+      }
+    } else if (!casoSeleccionado && bandejaCasos.length > 0) {
+      setCasoSeleccionado(bandejaCasos[0].caso);
+    }
+  }, [bandejaCasos]);
+
   const casosFiltrados = bandejaCasos.filter(c => {
     if (filtroAlerta === 'TODOS') return true;
     return c.alerta === filtroAlerta;
   });
 
   const casoActual = bandejaCasos.find(c => c.caso === casoSeleccionado) || casosFiltrados[0] || bandejaCasos[0];
-  const estudianteActual = ESTUDIANTES_COHORTE.find(e => e.id === estudianteSelId) || ESTUDIANTES_COHORTE[0];
+  const estudianteActual = cohorteEnriquecida.find(e => e.id === estudianteSelId) || cohorteEnriquecida[0];
 
   const handleResolverCaso = () => {
     if (!decisionTomada || !casoActual) return;
@@ -33,13 +88,54 @@ export default function PanelEquipo({ bandejaCasos, actualizarDecisionCaso }) {
   const handleGenerarCopiloto = () => {
     setGenerandoBorrador(true);
     setTimeout(() => {
-      setBorradorCopiloto({
-        sintesis: `En las primeras semanas se registran ${estudianteActual.senales}. Cursa estudios en jornada ${estudianteActual.jornada.toLowerCase()} en ${estudianteActual.institucion}.`,
-        apoyos: ['[S01] Beca Mensual Fundación Puente', '[S02] CAI · Tutorías Académicas', '[S07] Flexibilidad Académica'],
-        borrador: `Hola, ¿cómo estás? Te escribo de Fundación Puente para saber cómo te has sentido en este inicio de semestre en ${estudianteActual.carrera}. Queremos coordinar un momento para conversar si necesitas apoyo con tus turnos o en alguna materia. Es voluntario y elegimos el horario juntos.`
-      });
+      const alerta = estudianteActual.alertaRaw || (estudianteActual.alerta?.includes('Roja') ? 'ROJA' : estudianteActual.alerta?.includes('Naranja') ? 'NARANJA' : 'AMARILLA');
+      const nombre = estudianteActual.nombre || 'el/la estudiante';
+      const carrera = estudianteActual.carrera || 'su carrera';
+      const cita = estudianteActual.frase_gatillante ? ` Declaró textualmente: "${estudianteActual.frase_gatillante}".` : '';
+
+      if (alerta === 'ROJA') {
+        setBorradorCopiloto({
+          sintesis: `ALERTA ROJA INMEDIATA: ${nombre} cursa primer año de ${carrera} en ${estudianteActual.institucion}.${cita} Presenta situación de angustia extrema/violencia que requiere activar de inmediato el protocolo de apoyo psicosocial humano prioritario sin demora.`,
+          apoyos: [
+            '[S03] CAI · Servicios Psicosociales (Salud Mental, Contención y Legal)',
+            'Línea Prevención *4141 / SAMU 131 (Protocolo de Crisis Inmediato)',
+            '[S04] Becas Complementarias de Emergencia y Red de Protección'
+          ],
+          borrador: `Hola ${nombre}, te escribo con mucha cercanía y respeto desde Fundación Puente. Leí lo que nos compartiste y queremos que sepas que no estás sola/o y que cuentas con todo nuestro equipo para apoyarte. Nos gustaría llamarte hoy mismo para escucharte y coordinar apoyo prioritario y voluntario con nuestra psicóloga y trabajadora social. ¿Podemos hablar unos minutos?`
+        });
+      } else if (alerta === 'NARANJA') {
+        setBorradorCopiloto({
+          sintesis: `ALERTA NARANJA (< 48 Horas): ${nombre} reporta dificultades críticas de movilización, alimentación o turnos laborales en ${carrera} (${estudianteActual.jornada}).${cita}`,
+          apoyos: [
+            '[S01] Beca Mensual Fundación Puente (Transporte y Alimentación)',
+            '[S04] Becas de Emergencia y Materiales Complementarios',
+            '[S07] Flexibilidad Académica para Trabajadores y Cuidadores'
+          ],
+          borrador: `Hola ${nombre}, ¿cómo estás? Te escribo de Fundación Puente para saber cómo te has sentido en este inicio de semestre en ${carrera}. Queremos coordinar un momento para conversar si necesitas apoyo con tus turnos, pasajes o alguna materia. Es voluntario y elegimos el horario juntos.`
+        });
+      } else if (alerta === 'AMARILLA') {
+        setBorradorCopiloto({
+          sintesis: `SEGUIMIENTO EN AGENDA: ${nombre} registra inquietudes con evaluaciones, ramos o trámites de beneficios en ${carrera}.${cita}`,
+          apoyos: [
+            '[S02] CAI · Tutorías Académicas y Reforzamiento con Voluntarios',
+            '[S06] Orientación en Beneficios Estatales (FUAS / Gratuidad)',
+            '[S08] Actividades Formativas y Talleres de Adaptación'
+          ],
+          borrador: `Hola ${nombre}, ¿cómo va tu semana en ${carrera}? Te contacto de Fundación Puente porque sabemos que los primeros certámenes y trámites pueden ser exigentes. Tenemos tutorías gratuitas del CAI que te pueden ayudar mucho. ¿Te gustaría que coordinemos una sesión?`
+        });
+      } else {
+        setBorradorCopiloto({
+          sintesis: `SEGUIMIENTO REGULAR: ${nombre} se encuentra al día con avance académico regular en ${carrera} (${estudianteActual.institucion}).`,
+          apoyos: [
+            '[S01] Beca Mensual Fundación Puente',
+            '[S08] Talleres Formativos y Encuentros de Red',
+            '[S02] CAI · Cursos de Inglés eClass'
+          ],
+          borrador: `Hola ${nombre}, un gusto saludarte desde Fundación Puente. Queríamos saber cómo te va en tus ramos y recordarte que están abiertos los talleres formativos y cursos de inglés eClass para becados de primer año.`
+        });
+      }
       setGenerandoBorrador(false);
-    }, 700);
+    }, 600);
   };
 
   const pendientes = bandejaCasos.filter(c => c.decision === 'Pendiente').length;
@@ -154,7 +250,17 @@ export default function PanelEquipo({ bandejaCasos, actualizarDecisionCaso }) {
                       return (
                         <tr
                           key={c.caso}
-                          onClick={() => setCasoSeleccionado(c.caso)}
+                          onClick={() => {
+                            setCasoSeleccionado(c.caso);
+                            const estEncontrado = cohorteEnriquecida.find(x =>
+                              (c.persona_id && x.persona_id === c.persona_id) ||
+                              (c.estudiante && x.nombre && x.nombre.toLowerCase() === c.estudiante.toLowerCase())
+                            );
+                            if (estEncontrado) {
+                              setEstudianteSelId(estEncontrado.id);
+                              setBorradorCopiloto(null);
+                            }
+                          }}
                           style={{
                             borderBottom: '1px solid #E5E0DB',
                             cursor: 'pointer',
@@ -163,11 +269,15 @@ export default function PanelEquipo({ bandejaCasos, actualizarDecisionCaso }) {
                         >
                           <td style={{ padding: '8px', fontWeight: '700' }}>{c.caso}</td>
                           <td style={{ padding: '8px' }}>{c.estudiante}</td>
-                          <td style={{ padding: '8px' }}><span className={`badge ${badgeCls}`}>{c.alerta}</span></td>
+                          <td style={{ padding: '8px' }}>
+                            <span className={`badge ${badgeCls}`} style={{ animation: c.alerta === 'ROJA' ? 'pulse 1.5s infinite' : 'none' }}>
+                              {c.alerta}
+                            </span>
+                          </td>
                           <td style={{ padding: '8px', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             <i>"{c.frase_gatillante}"</i>
                           </td>
-                          <td style={{ padding: '8px', fontWeight: '600', color: c.decision === 'Pendiente' ? '#D97706' : '#166534' }}>
+                          <td style={{ padding: '8px', fontWeight: '600', color: c.decision === 'Pendiente' ? (c.alerta === 'ROJA' ? '#DC2626' : '#D97706') : '#166534' }}>
                             {c.decision}
                           </td>
                         </tr>
@@ -179,19 +289,44 @@ export default function PanelEquipo({ bandejaCasos, actualizarDecisionCaso }) {
             )}
 
             {casoActual && (
-              <div style={{ background: '#FDFBF9', border: '1px solid #E5E0DB', borderRadius: '10px', padding: '16px' }}>
+              <div style={{
+                background: casoActual.alerta === 'ROJA' ? '#FFF5F5' : '#FDFBF9',
+                border: `1px solid ${casoActual.alerta === 'ROJA' ? '#FCA5A5' : '#E5E0DB'}`,
+                borderLeft: `6px solid ${casoActual.alerta === 'ROJA' ? '#DC2626' : casoActual.alerta === 'NARANJA' ? '#EA580C' : casoActual.alerta === 'AMARILLA' ? '#D97706' : '#23A455'}`,
+                borderRadius: '10px',
+                padding: '16px'
+              }}>
+                {casoActual.alerta === 'ROJA' && (
+                  <div style={{
+                    background: '#FEE2E2',
+                    border: '1px solid #FCA5A5',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    marginBottom: '10px',
+                    color: '#991B1B',
+                    fontSize: '0.82rem',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <AlertCircle size={16} color="#DC2626" style={{ flexShrink: 0 }} />
+                    <span>⚠️ ALERTA ROJA EN VIVO: Situación urgente declarada por el estudiante. Requiere contacto humano prioritario (*4141 / SAMU 131).</span>
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <h4 style={{ color: '#9F1127', fontSize: '0.98rem', margin: 0 }}>
                     Detalle del Caso: {casoActual.caso} · {casoActual.estudiante}
                   </h4>
-                  <span className={`badge ${casoActual.alerta === 'ROJA' ? 'badge-red' : casoActual.alerta === 'NARANJA' ? 'badge-orange' : casoActual.alerta === 'AMARILLA' ? 'badge-amber' : 'badge-green'}`}>
+                  <span className={`badge ${casoActual.alerta === 'ROJA' ? 'badge-red' : casoActual.alerta === 'NARANJA' ? 'badge-orange' : casoActual.alerta === 'AMARILLA' ? 'badge-amber' : 'badge-green'}`} style={{ animation: casoActual.alerta === 'ROJA' ? 'pulse 1.5s infinite' : 'none' }}>
                     Semáforo {casoActual.alerta}
                   </span>
                 </div>
 
                 <div style={{ fontSize: '0.85rem', marginBottom: '8px' }}>
                   <b>Cita Textual que Activó la Alerta:</b>{' '}
-                  <span style={{ color: '#9F1127', fontStyle: 'italic', fontWeight: '600' }}>"{casoActual.frase_gatillante}"</span>
+                  <span style={{ color: '#9F1127', fontStyle: 'italic', fontWeight: '700' }}>"{casoActual.frase_gatillante}"</span>
                 </div>
                 <div style={{ fontSize: '0.85rem', marginBottom: '8px' }}>
                   <b>Resumen Situacional:</b> {casoActual.resumen_ia}
@@ -261,58 +396,97 @@ export default function PanelEquipo({ bandejaCasos, actualizarDecisionCaso }) {
         {/* Columna Derecha: Cohorte y Copiloto IA */}
         <div>
           <div className="card">
-            <h3 className="card-title">🗂️ Cohorte de Becados & Copiloto IA</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <h3 className="card-title" style={{ margin: 0 }}>🗂️ Cohorte de Becados & Copiloto IA</h3>
+              <span className={`badge ${estudianteActual.alertaRaw === 'ROJA' ? 'badge-red' : estudianteActual.alertaRaw === 'NARANJA' ? 'badge-orange' : estudianteActual.alertaRaw === 'AMARILLA' ? 'badge-amber' : 'badge-green'}`} style={{ animation: estudianteActual.alertaRaw === 'ROJA' ? 'pulse 1.5s infinite' : 'none' }}>
+                {estudianteActual.alerta}
+              </span>
+            </div>
             <p style={{ fontSize: '0.82rem', color: '#6B7280', marginBottom: '12px' }}>
-              Selecciona un becado para que la IA ordene antecedentes y redacte un borrador sin etiquetas ni predicciones:
+              Selecciona un becado para que la IA ordene antecedentes y redacte una propuesta de acompañamiento acorde a su nivel de alerta:
             </p>
 
             <select
               value={estudianteSelId}
               onChange={(e) => {
-                setEstudianteSelId(e.target.value);
+                const nuevoId = e.target.value;
+                setEstudianteSelId(nuevoId);
                 setBorradorCopiloto(null);
+                const est = cohorteEnriquecida.find(x => x.id === nuevoId);
+                if (est?.casoId) {
+                  setCasoSeleccionado(est.casoId);
+                }
               }}
               style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #D1D5DB', marginBottom: '12px', fontSize: '0.85rem' }}
             >
-              {ESTUDIANTES_COHORTE.map(est => (
+              {cohorteEnriquecida.map(est => (
                 <option key={est.id} value={est.id}>
-                  {est.id} · {est.carrera} ({est.institucion}) · {est.alerta}
+                  {est.id} · {est.nombre} ({est.carrera}) · {est.alerta}
                 </option>
               ))}
             </select>
 
-            <div style={{ background: '#F8F6F4', padding: '12px', borderRadius: '8px', border: '1px solid #E5E0DB', fontSize: '0.84rem', marginBottom: '12px' }}>
-              <div><b>Institución:</b> {estudianteActual.institucion} ({estudianteActual.jornada})</div>
+            <div style={{
+              background: estudianteActual.alertaRaw === 'ROJA' ? '#FFF5F5' : '#F8F6F4',
+              border: `1px solid ${estudianteActual.alertaRaw === 'ROJA' ? '#FCA5A5' : '#E5E0DB'}`,
+              borderLeft: `5px solid ${estudianteActual.alertaRaw === 'ROJA' ? '#DC2626' : estudianteActual.alertaRaw === 'NARANJA' ? '#EA580C' : estudianteActual.alertaRaw === 'AMARILLA' ? '#D97706' : '#23A455'}`,
+              padding: '12px',
+              borderRadius: '8px',
+              fontSize: '0.84rem',
+              marginBottom: '12px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <div><b>Estudiante:</b> {estudianteActual.nombre} ({estudianteActual.institucion})</div>
+                <span style={{ fontSize: '0.74rem', fontWeight: '700', color: estudianteActual.alertaRaw === 'ROJA' ? '#DC2626' : '#6B7280' }}>
+                  {estudianteActual.jornada}
+                </span>
+              </div>
               <div><b>Promedio / Asistencia:</b> {estudianteActual.promedio.toFixed(1)} / {estudianteActual.asistencia}%</div>
-              <div><b>Señales registradas:</b> {estudianteActual.senales}</div>
+              <div style={{ marginTop: '4px' }}><b>Señales registradas:</b> {estudianteActual.senales}</div>
+              {estudianteActual.frase_gatillante && (
+                <div style={{ marginTop: '6px', padding: '6px 8px', background: 'rgba(255,255,255,0.7)', borderRadius: '6px', border: '1px dashed #D1D5DB' }}>
+                  <b style={{ color: estudianteActual.alertaRaw === 'ROJA' ? '#DC2626' : '#9F1127' }}>Declaración del estudiante:</b>{' '}
+                  <span style={{ fontStyle: 'italic', fontWeight: '600' }}>"{estudianteActual.frase_gatillante}"</span>
+                </div>
+              )}
             </div>
 
             <button
               onClick={handleGenerarCopiloto}
               disabled={generandoBorrador}
               className="btn-primary"
-              style={{ width: '100%', marginBottom: '14px' }}
+              style={{
+                width: '100%',
+                marginBottom: '14px',
+                background: estudianteActual.alertaRaw === 'ROJA' ? 'linear-gradient(135deg, #DC2626 0%, #991B1B 100%)' : undefined
+              }}
             >
-              <Sparkles size={16} /> {generandoBorrador ? 'Preparando propuesta…' : 'Preparar Acompañamiento con IA'}
+              <Sparkles size={16} /> {generandoBorrador ? 'Preparando propuesta…' : `Preparar Acompañamiento con IA (${estudianteActual.alertaRaw === 'ROJA' ? '🚨 Urgencia Roja' : estudianteActual.nombre})`}
             </button>
 
             {borradorCopiloto && (
               <div style={{ background: '#FFFFFF', border: '1px solid #E5E0DB', borderRadius: '10px', padding: '14px' }}>
-                <h4 style={{ fontSize: '0.9rem', color: '#9F1127', marginBottom: '6px' }}>1. Síntesis Ficha Única</h4>
+                <h4 style={{ fontSize: '0.9rem', color: estudianteActual.alertaRaw === 'ROJA' ? '#DC2626' : '#9F1127', marginBottom: '6px' }}>
+                  1. Síntesis Ficha Única {estudianteActual.alertaRaw === 'ROJA' && '🚨'}
+                </h4>
                 <p style={{ fontSize: '0.82rem', color: '#374151', marginBottom: '10px' }}>{borradorCopiloto.sintesis}</p>
 
                 <h4 style={{ fontSize: '0.9rem', color: '#166534', marginBottom: '6px' }}>2. Apoyos Recomendados</h4>
                 <ul style={{ fontSize: '0.82rem', color: '#374151', paddingLeft: '18px', marginBottom: '10px' }}>
-                  {borradorCopiloto.apoyos.map((a, i) => <li key={i}>{a}</li>)}
+                  {borradorCopiloto.apoyos.map((a, i) => (
+                    <li key={i} style={{ marginBottom: '3px', fontWeight: i === 0 && estudianteActual.alertaRaw === 'ROJA' ? '700' : 'normal', color: i === 0 && estudianteActual.alertaRaw === 'ROJA' ? '#991B1B' : '#374151' }}>
+                      {a}
+                    </li>
+                  ))}
                 </ul>
 
                 <h4 style={{ fontSize: '0.9rem', color: '#9F1127', marginBottom: '6px' }}>3. Borrador de Mensaje (Voluntario)</h4>
-                <div style={{ background: '#FFF5F6', padding: '10px', borderRadius: '8px', border: '1px solid #F1D4DB', fontSize: '0.85rem', color: '#1F2937', fontStyle: 'italic', marginBottom: '10px' }}>
+                <div style={{ background: estudianteActual.alertaRaw === 'ROJA' ? '#FFF5F5' : '#FFF5F6', padding: '10px', borderRadius: '8px', border: `1px solid ${estudianteActual.alertaRaw === 'ROJA' ? '#FCA5A5' : '#F1D4DB'}`, fontSize: '0.85rem', color: '#1F2937', fontStyle: 'italic', marginBottom: '10px' }}>
                   "{borradorCopiloto.borrador}"
                 </div>
 
                 <div style={{ fontSize: '0.75rem', color: '#166534', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <ShieldCheck size={14} /> Validación superada: Libre de palabras como "riesgo", porcentajes o deserción.
+                  <ShieldCheck size={14} /> Validación ética superada: Libre de etiquetas clínicas, pronósticos de deserción y porcentajes.
                 </div>
               </div>
             )}

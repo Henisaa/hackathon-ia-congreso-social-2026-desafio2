@@ -9,6 +9,7 @@ import { MessageSquare, Award, FileText, LayoutDashboard, BarChart2, ShieldCheck
 import {
   obtenerBandejaCasos,
   guardarBandejaCasos,
+  ordenarCasosPorSeveridad,
   obtenerPerfilActivo,
   guardarPerfilActivo,
   suscribirCambios,
@@ -16,6 +17,7 @@ import {
 } from './services/storageService';
 
 const PERFIL_DEFECTO = {
+  id_persona: 'P1',
   nombre: 'Camila',
   institucion: 'Duoc UC San Joaquín',
   carrera: 'Técnico en Enfermería',
@@ -86,21 +88,22 @@ export default function App() {
       // Si ya existe un caso pendiente para este estudiante o persona_id, actualizamos en vivo su conversación y severidad
       const indiceExistente = prev.findIndex(c =>
         c.decision === 'Pendiente' &&
-        (c.persona_id === nuevoCaso.persona_id || c.estudiante === nuevoCaso.estudiante)
+        ((nuevoCaso.persona_id && c.persona_id === nuevoCaso.persona_id) || c.estudiante === nuevoCaso.estudiante)
       );
 
       let actualizados;
       if (indiceExistente >= 0) {
         const actual = prev[indiceExistente];
         const peso = { ROJA: 3, NARANJA: 2, AMARILLA: 1, VERDE: 0 };
-        const mejorAlerta = (peso[nuevoCaso.alerta] || 0) >= (peso[actual.alerta] || 0) ? nuevoCaso.alerta : actual.alerta;
+        const esMasGraveOIgual = (peso[nuevoCaso.alerta] || 0) >= (peso[actual.alerta] || 0);
+        const mejorAlerta = esMasGraveOIgual ? nuevoCaso.alerta : actual.alerta;
 
         const casoActualizado = {
           ...actual,
           alerta: mejorAlerta,
-          frase_gatillante: nuevoCaso.frase_gatillante || actual.frase_gatillante,
-          servicio_sugerido: nuevoCaso.servicio_sugerido || actual.servicio_sugerido,
-          resumen_ia: nuevoCaso.resumen_ia || actual.resumen_ia,
+          frase_gatillante: esMasGraveOIgual && nuevoCaso.frase_gatillante ? nuevoCaso.frase_gatillante : (actual.frase_gatillante || nuevoCaso.frase_gatillante),
+          servicio_sugerido: esMasGraveOIgual && nuevoCaso.servicio_sugerido ? nuevoCaso.servicio_sugerido : (actual.servicio_sugerido || nuevoCaso.servicio_sugerido),
+          resumen_ia: esMasGraveOIgual && nuevoCaso.resumen_ia ? nuevoCaso.resumen_ia : (actual.resumen_ia || nuevoCaso.resumen_ia),
           conversacion: nuevoCaso.conversacion || actual.conversacion,
           fecha: fechaActual
         };
@@ -112,8 +115,9 @@ export default function App() {
         actualizados = [{ ...nuevoCaso, caso: idCaso, fecha: fechaActual, decision: 'Pendiente' }, ...prev];
       }
 
-      guardarBandejaCasos(actualizados);
-      return actualizados;
+      const listaOrdenada = ordenarCasosPorSeveridad(actualizados);
+      guardarBandejaCasos(listaOrdenada);
+      return listaOrdenada;
     });
   };
 

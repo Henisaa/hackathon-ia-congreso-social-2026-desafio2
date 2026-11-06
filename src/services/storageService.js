@@ -87,28 +87,50 @@ export function suscribirCambios(callback) {
 // Bandeja de Casos (Semáforo del Equipo)
 // -------------------------------------------------------------
 
+export function ordenarCasosPorSeveridad(casos = []) {
+  const pesoAlerta = { ROJA: 4, NARANJA: 3, AMARILLA: 2, VERDE: 1 };
+  return [...casos].sort((a, b) => {
+    // 1. Pendientes primero
+    const aPendiente = a.decision === 'Pendiente' ? 1 : 0;
+    const bPendiente = b.decision === 'Pendiente' ? 1 : 0;
+    if (aPendiente !== bPendiente) {
+      return bPendiente - aPendiente;
+    }
+    // 2. Severidad de alerta (ROJA > NARANJA > AMARILLA > VERDE)
+    const pesoA = pesoAlerta[a.alerta] || 0;
+    const pesoB = pesoAlerta[b.alerta] || 0;
+    if (pesoA !== pesoB) {
+      return pesoB - pesoA;
+    }
+    return 0;
+  });
+}
+
 export function obtenerBandejaCasos() {
-  if (typeof window === 'undefined') return CASOS_INICIALES;
+  if (typeof window === 'undefined') return ordenarCasosPorSeveridad(CASOS_INICIALES);
   try {
     const raw = localStorage.getItem(KEY_BANDEJA);
     if (!raw) {
-      guardarBandejaCasos(CASOS_INICIALES, false);
-      return CASOS_INICIALES;
+      const iniciales = ordenarCasosPorSeveridad(CASOS_INICIALES);
+      guardarBandejaCasos(iniciales, false);
+      return iniciales;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : CASOS_INICIALES;
+    const lista = Array.isArray(parsed) && parsed.length > 0 ? parsed : CASOS_INICIALES;
+    return ordenarCasosPorSeveridad(lista);
   } catch (e) {
     console.warn('[Storage] Error al leer bandeja de casos:', e);
-    return CASOS_INICIALES;
+    return ordenarCasosPorSeveridad(CASOS_INICIALES);
   }
 }
 
 export function guardarBandejaCasos(casos, emitir = true) {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(KEY_BANDEJA, JSON.stringify(casos));
+    const ordenados = ordenarCasosPorSeveridad(casos);
+    localStorage.setItem(KEY_BANDEJA, JSON.stringify(ordenados));
     if (emitir) {
-      notificarCambio('BANDEJA_UPDATED', { total: casos.length });
+      notificarCambio('BANDEJA_UPDATED', { total: ordenados.length });
     }
   } catch (e) {
     console.error('[Storage] Error al guardar bandeja:', e);

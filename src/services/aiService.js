@@ -2,7 +2,7 @@
 import { CATALOGO_SERVICIOS } from './catalogoData.js';
 
 // Expresiones regulares de salvaguardas éticas y semáforo chileno ampliado
-export const PATRON_CRISIS = /(suicid|matarme|quitarme la vida|no quiero (seguir )?viv|no (le )?veo sentido a (la vida|vivir)|desaparecer para siempre|hacerme da[ñn]o|autolesi|cortarme|terminar con todo|me quiero morir|violencia (familiar|intrafamiliar|en mi casa|dom[eé]stica)|me pega|me golpea|me maltrata|abus[oa]|violaci|no doy m[aá]s|angustia extrema|desesperad[oa]|no puedo m[aá]s con esto)/i;
+export const PATRON_CRISIS = /(suicid|matarme|quitarme la vida|no quiero (seguir )?viv|no (le )?veo sentido a (la vida|vivir)|desaparecer para siempre|hacerme da[ñn]o|autolesi|cortarme|terminar con todo|me quiero morir|violencia (familiar|intrafamiliar|en mi casa|dom[eé]stica)|me pega|me golpea|me maltrata|abus[oa]|violaci|no doy m[aá]s|angustia extrema|desesperad[oa]|no puedo m[aá]s con esto|desesperaci[oó]n|crisis (vital|emocional|de p[aá]nico)|colapsar|no aguanto m[aá]s|amenaza)/i;
 
 export const PATRON_NARANJA = /(dejar la carrera|retirar(me)?|salirme|congelar( la carrera)?|botar la carrera|renunciar a los estudios|no puedo pagar|no tengo plata|no me alcanza la plata|sin plata|sin un peso|sin lucas|no tengo para (comer|almorzar|la micro|el pasaje|la bip|el metro|desayunar|traslado)|sin comida|sin micro|sin pasaje|bip sin saldo|desaloj|perder la pieza|perder el techo|no tengo donde vivir|sin arriendo|me echaron de la pieza|me piden la pieza|sin trabajo|me despidieron|sin turnos)/i;
 
@@ -12,76 +12,55 @@ export const PATRON_DIAGNOSTICO = /\b(tienes|sufres|padeces|parece que tienes)\s
 
 export const MENSAJE_CRISIS = `Gracias por contarlo. Lo que describes es importante y mereces apoyo de una persona ahora, no de una IA.\n\n• Si piensas en hacerte daño o estás sufriendo violencia, llama de inmediato a la **Línea de Prevención del Suicidio *4141** (gratuita, 24/7 desde celulares) o a **Salud Responde 600 360 7777**.\n• En una emergencia vital, llama al **131 (SAMU)** o acude al centro de urgencias más cercano.\n\nAvisé con máxima prioridad a la profesional de Fundación Puente para coordinar contacto humano urgente contigo. (En la hackathon es una simulación).`;
 
-// Función central para evaluar el semáforo ético en tiempo real
-export function evaluarSemaforo(texto = '', alertaPrevia = 'VERDE') {
+// Función central para evaluar el semáforo ético en tiempo real con memoria estricta de severidad
+export function evaluarSemaforo(texto = '', alertaPrevia = 'VERDE', frasePrevia = '') {
   const t = String(texto || '').trim();
+  const PESOS = { ROJA: 3, NARANJA: 2, AMARILLA: 1, VERDE: 0 };
 
-  // 1. Prioridad Máxima: Crisis Vital o Violencia (ROJA)
+  let nuevaAlerta = 'VERDE';
+  let nuevoGatillante = '';
+  let nuevoServicio = 'S01';
+  let nuevoTiempo = 'Orientación Informativa';
+
+  // 1. Evaluar mensaje entrante
   if (PATRON_CRISIS.test(t)) {
     const match = t.match(PATRON_CRISIS);
-    return {
-      alerta: 'ROJA',
-      gatillante: match ? match[0] : 'Señal de crisis vital o violencia detectada',
-      servicioSugerido: 'S03',
-      tiempoRespuesta: 'Contacto Humano Inmediato'
-    };
-  }
-
-  // 2. Prioridad Alta: Riesgo Económico, Deserción o Techo en 48h (NARANJA)
-  if (PATRON_NARANJA.test(t)) {
+    nuevaAlerta = 'ROJA';
+    nuevoGatillante = t || (match ? match[0] : 'Señal de crisis vital o violencia detectada');
+    nuevoServicio = 'S03';
+    nuevoTiempo = 'Contacto Humano Inmediato (Protocolo *4141)';
+  } else if (PATRON_NARANJA.test(t)) {
     const match = t.match(PATRON_NARANJA);
-    return {
-      alerta: 'NARANJA',
-      gatillante: match ? match[0] : 'Situación crítica de transporte, comida o vivienda',
-      servicioSugerido: 'S04',
-      tiempoRespuesta: 'Contacto en < 48 horas'
-    };
-  }
-
-  // 3. Prioridad Media: Reprobación Académica, FUAS o Beneficios (AMARILLA)
-  if (PATRON_AMARILLA.test(t)) {
+    nuevaAlerta = 'NARANJA';
+    nuevoGatillante = t || (match ? match[0] : 'Situación crítica de transporte, comida o vivienda');
+    nuevoServicio = 'S04';
+    nuevoTiempo = 'Contacto en < 48 horas';
+  } else if (PATRON_AMARILLA.test(t)) {
     const match = t.match(PATRON_AMARILLA);
-    return {
-      alerta: 'AMARILLA',
-      gatillante: match ? match[0] : 'Dificultad académica o consulta de beneficios',
-      servicioSugerido: 'S02',
-      tiempoRespuesta: 'Seguimiento en Agenda'
-    };
+    nuevaAlerta = 'AMARILLA';
+    nuevoGatillante = t || (match ? match[0] : 'Dificultad académica o consulta de beneficios');
+    nuevoServicio = 'S02';
+    nuevoTiempo = 'Seguimiento en Agenda';
   }
 
-  // 4. Si el mensaje actual no trae palabras gatillantes, mantener la alerta previa de la conversación
-  if (alertaPrevia === 'ROJA') {
-    return {
-      alerta: 'ROJA',
-      gatillante: 'Caso crítico activo en conversación',
-      servicioSugerido: 'S03',
-      tiempoRespuesta: 'Contacto Humano Inmediato'
-    };
-  }
+  // 2. Aplicar memoria estricta de severidad: nunca degradar a un nivel inferior automáticamente
+  const pesoNuevo = PESOS[nuevaAlerta] || 0;
+  const pesoPrevio = PESOS[alertaPrevia] || 0;
 
-  if (alertaPrevia === 'NARANJA') {
+  if (pesoPrevio > pesoNuevo) {
     return {
-      alerta: 'NARANJA',
-      gatillante: 'Caso prioritario activo en conversación',
-      servicioSugerido: 'S04',
-      tiempoRespuesta: 'Contacto en < 48 horas'
-    };
-  }
-
-  if (alertaPrevia === 'AMARILLA') {
-    return {
-      alerta: 'AMARILLA',
-      gatillante: 'Seguimiento académico activo',
-      servicioSugerido: 'S02',
-      tiempoRespuesta: 'Seguimiento en Agenda'
+      alerta: alertaPrevia,
+      gatillante: frasePrevia || (alertaPrevia === 'ROJA' ? 'Señal de crisis vital o violencia activa en conversación' : 'Alerta prioritaria activa en conversación'),
+      servicioSugerido: alertaPrevia === 'ROJA' ? 'S03' : alertaPrevia === 'NARANJA' ? 'S04' : 'S02',
+      tiempoRespuesta: alertaPrevia === 'ROJA' ? 'Contacto Humano Inmediato (Protocolo *4141)' : alertaPrevia === 'NARANJA' ? 'Contacto en < 48 horas' : 'Seguimiento en Agenda'
     };
   }
 
   return {
-    alerta: 'VERDE',
-    gatillante: '',
-    servicioSugerido: 'S01',
-    tiempoRespuesta: 'Orientación Informativa'
+    alerta: nuevaAlerta,
+    gatillante: nuevoGatillante || frasePrevia || '',
+    servicioSugerido: nuevoServicio,
+    tiempoRespuesta: nuevoTiempo
   };
 }
 
@@ -113,14 +92,14 @@ function tutear(texto = '') {
   return res;
 }
 
-export async function enviarMensajeIA(messages, becadoInfo = {}, alertaPrevia = 'VERDE') {
+export async function enviarMensajeIA(messages, becadoInfo = {}, alertaPrevia = 'VERDE', frasePrevia = '') {
   const lastUserMsg = messages[messages.length - 1]?.content || '';
 
-  // 1. Evaluación del Semáforo en Tiempo Real
-  const semaforo = evaluarSemaforo(lastUserMsg, alertaPrevia);
+  // 1. Evaluación del Semáforo en Tiempo Real con preservación de severidad y cita previa
+  const semaforo = evaluarSemaforo(lastUserMsg, alertaPrevia, frasePrevia);
 
   // Verificación ética de crisis vital
-  if (semaforo.alerta === 'ROJA' && PATRON_CRISIS.test(lastUserMsg)) {
+  if (semaforo.alerta === 'ROJA' && (PATRON_CRISIS.test(lastUserMsg) || alertaPrevia === 'ROJA')) {
     return {
       content: MENSAJE_CRISIS,
       alerta: 'ROJA',
