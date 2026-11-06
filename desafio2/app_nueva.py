@@ -1,9 +1,5 @@
-"""Desafío 2 · Plantilla para construir una app NUEVA sobre el núcleo común.
-
-Copien este archivo cuando su idea no quepa en las variantes A o B. Ya trae lo que las bases exigen:
-ingreso por equipo, aviso de IA, planilla del equipo, IA con cambio de proveedor, registro, límite de
-consultas, protocolo de crisis y decisión humana. Cambien solo lo marcado con ✏️.
-Para publicarla en Streamlit Cloud, usen como Main file:  desafio2/app_nueva.py"""
+"""Desafío 2 · Hub Unificado · Puente Contigo (Fundación Puente).
+Permite alternar en vivo entre la vista del Becado y el Panel del Equipo para la demo del pitch."""
 import sys
 from pathlib import Path
 AQUI = Path(__file__).parent
@@ -12,50 +8,58 @@ import streamlit as st
 import nucleo_st as N
 import servicios as S
 
-# ✏️ Identificador (aparece en el registro), título e ícono
-N.iniciar("D2-NUEVA", "Mi herramienta · Desafío 2", "✨")
-N.acceso()  # 🔒 código y clave del equipo
+N.iniciar("Puente-Hub", "Puente Contigo · Hub Demostrador", "✨")
+N.acceso()
 
-# La planilla de la Variante B sirve de base: usuario, tono, largo, ejemplos, textos y servicios_extra
 cfg, extra = N.configuracion(str(AQUI / "planillas" / "Plantilla_config_D2_Variante_B.xlsx"), "servicios_extra", S.validar_servicio)
 catalogo = S.catalogo(AQUI, extra)
 
-# ✏️ Reglas fijas de su herramienta. Mantengan las que protegen a las personas (1, 2 y 3).
-REGLAS = """Eres un asistente que ayuda a estudiantes de primer año de educación superior técnico-profesional en Chile.
-✏️ Tu tarea: (describan aquí qué hace su herramienta y para quién).
-REGLAS FIJAS:
-1. No diagnosticas, no predices y no decides por la persona: una persona del equipo de apoyo decide cualquier contacto.
-2. Solo mencionas servicios del catálogo, por su nombre y con su código entre corchetes, por ejemplo [S04].
-3. No pides datos personales (RUT, dirección, diagnósticos) y no inventas pasos de acceso: usa solo "Cómo acceder".
-4. Escribe en español de Chile, tuteando con "tú".
-Catálogo:
-{catalogo}"""
+# Barra lateral para alternar vista durante el pitch
+with st.sidebar:
+    st.markdown("### 🎛️ Vista del Prototipo")
+    vista = st.radio("Elige la perspectiva a demostrar:", [
+        "🧑‍🎓 Vista Becado (Puente Contigo)",
+        "👩‍⚕️ Vista Equipo Fundación Puente",
+        "📐 Arquitectura y Salvaguardas Éticas"
+    ])
+    st.divider()
 
-# ✏️ Respuesta cuando la IA no responde (modo demostración)
-ia = N.IA({"respuesta": {"_por_defecto": "[Demostración] La IA no respondió. Aquí iría la orientación con un servicio del catálogo, por ejemplo **Tutoría entre pares**."}})
+if vista.startswith("🧑‍🎓"):
+    import app_b_checkin  # Muestra la app completa del becado
+elif vista.startswith("👩‍⚕️"):
+    st.info("Para ver el panel del equipo con priorización algorítmica y cohorte completa de 3.000 estudiantes, abre `desafio2/app_a_panel_tutor.py` o revisa la bandeja a continuación.")
+    
+    # Bandeja rápida del equipo
+    bandeja = N.estado_equipo("bandeja").get("casos", [])
+    st.markdown("#### 🚨 Bandeja Rápida de Alertas Activas")
+    if not bandeja:
+        N.tarjeta("Bandeja al día", "No hay alertas pendientes en este momento. Interactúa en el Canal Confidencial como becado para activar el semáforo 🔴/🟠/🟡.", "ok")
+    else:
+        for b in bandeja:
+            tono = "bad" if "ROJA" in b.get("alerta", "") else ("warn" if "NARANJA" in b.get("alerta", "") else "info")
+            N.tarjeta(f"{b['caso']} · {b['estudiante']} ({b['alerta']})",
+                      f"<b>Cita Textual:</b> <i>\"{b['frase_gatillante']}\"</i><br><b>Resumen:</b> {b['resumen_ia']}<br><b>Estado:</b> {b['decision']}", tono)
+else:
+    N.encabezado("Arquitectura Ética · Puente Contigo", "Innovación tecnológica al servicio de la dignidad humana y los desafíos sociales.")
+    st.markdown("""
+    ### 🏛️ Ecosistema Fundación Puente (Sin Entrevistas)
+    
+    1. **Ficha Única del Becado**:
+       - 6 dimensiones auditables: Económica, Académica, Familiar, Bienestar, Red y Beneficios.
+       - Trazabilidad total: origen de cada dato (declarado, verificado o profesional) y fecha. Cero diagnósticos.
+    
+    2. **Eje 1 · Canal Confidencial con Semáforo de Alertas**:
+       - 🔴 **Alerta Roja:** Riesgo vital o violencia → Protocolo `*4141` y llamado inmediato.
+       - 🟠 **Alerta Naranja:** Abandono por falta de pasajes, comida o techo → Contacto en 48 horas.
+       - 🟡 **Alerta Amarilla:** Dificultad con ramos o trámites → Derivación a CAI o asistente social.
+       - **Cero Sesgo:** La alerta se activa exclusivamente por la cita textual de lo que dice el becado, nunca por su perfil.
 
-N.encabezado(cfg.get("titulo_app", "Mi herramienta"), cfg.get("texto_bienvenida", ""), ["Desafío 2 · Educación"])
-N.aviso_ia()  # 🔒 aviso de uso de IA
+    3. **Eje 2 · Asistente Personalizado de Beneficios**:
+       - Cruza la base verificada (Fundación Puente + Estado + IES).
+       - Clasifica en: *«Podrías postular»*, *«Ya lo tienes»* y *«Revisa este requisito»*, con lenguaje responsable (*«podrías optar»*) y botón directo *«Ayúdame a postular»*.
+    
+    4. **Decisión Humana Obligatoria**:
+       - La IA nunca decide ni asigna sanciones. La decisión de contacto y derivación siempre es de una profesional.
+    """)
 
-pregunta = st.text_area("✏️ ¿En qué te podemos orientar?", key="pregunta", height=120)
-if st.button("Enviar", type="primary") and pregunta.strip():
-    if N.crisis(pregunta):  # 🔒 protocolo de crisis: responde una persona, no la IA
-        st.session_state["resultado"] = (N.MENSAJE_CRISIS, {})
-        N.registrar({"tipo": "protocolo_crisis", "entrada": pregunta, "salida": N.MENSAJE_CRISIS})
-    elif not N.repetido(f"nueva|{pregunta.strip()}"):  # doble clic: no gasta otra consulta
-        sistema = REGLAS.format(catalogo=S.texto(catalogo)) + "\n\n" + N.personalizacion(cfg)
-        with st.spinner("Pensando…"):
-            texto, info = ia.llamar([{"role": "system", "content": sistema}, {"role": "user", "content": pregunta}], "respuesta")
-        st.session_state["resultado"] = (texto, info)
-
-if "resultado" in st.session_state:
-    texto, info = st.session_state["resultado"]
-    st.markdown(texto)
-    N.aviso_si_demo(info)
-    # 🔒 Decisión humana, registrada
-    d = st.radio("¿Qué harás con esta orientación?", ["Pediré que una persona me contacte", "Lo pensaré", "No me sirve"], index=None)
-    if d and st.button("Registrar mi decisión"):
-        N.registrar({"tipo": "decision_estudiante", "decision": d})
-        st.success("Decisión registrada. ¡Gracias!")
-
-N.pie(ia)  # 🔒 consultas restantes, cadena de IA y registro descargable
+N.pie(N.IA())

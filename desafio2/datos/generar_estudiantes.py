@@ -146,6 +146,33 @@ def generar() -> pd.DataFrame:
         return rng.choice(frases[cat])
     df["respuesta_checkin_s4"] = [checkin(r) for r in df.itertuples()]
     
+    # Dimensiones de la Ficha Única del Becado (Fundación Puente)
+    inst_list = ["Duoc UC San Joaquín", "INACAP Santiago Centro", "Santo Tomás Santiago", "Universidad Central", "Universidad de Chile", "Pontificia Universidad Católica", "IP Chile"]
+    df["institucion_educativa"] = rng.choice(inst_list, size=N)
+    df["tramo_fuas_pct"] = np.where(df["gratuidad"] == 1, rng.integers(10, 41, N), rng.integers(40, 70, N))
+    
+    def ficha_eco(r):
+        return f"Tramo FUAS {r.tramo_fuas_pct}%. Beca Mensual Puente asignada. Arancel: {'Gratuidad activa' if r.gratuidad == 1 else 'Pendiente / En copago'}."
+    def ficha_acad(r):
+        return f"Promedio parcial {r.nota_promedio_parcial:.1f}. Asistencia actual {r.asistencia_s4_s6_pct:.0f}%. Entregas atrasadas: {r.entregas_atrasadas}."
+    def ficha_fam(r):
+        return f"{'Primera generación universitaria en su familia. ' if r.primera_generacion == 1 else ''}{'Tiene personas dependientes a su cuidado. ' if r.cuida_dependientes == 1 else 'Sin dependientes declarados.'}"
+    def ficha_bienestar(r):
+        return f"{'Reporta necesidad de apoyo psicosocial. ' if r.contacto_bienestar == 1 else 'Sin alertas críticas en su check-in. '}"
+    def ficha_red(r):
+        return f"{'Traslado extenso (' + str(r.tiempo_traslado_min) + ' min). ' if r.tiempo_traslado_min > 60 else 'Traslado habitual. '}{'Sede ' + r.sede + '.'}"
+    def ficha_beneficios(r):
+        return f"Beca Mensual Puente [S01]{', Gratuidad [S06]' if r.gratuidad == 1 else ''}, TNE [S06]{', Ayuda de Cuidado [S05]' if r.cuida_dependientes == 1 else ''}."
+
+    df["dim_economica"] = [ficha_eco(r) for r in df.itertuples()]
+    df["dim_academica"] = [ficha_acad(r) for r in df.itertuples()]
+    df["dim_familiar"] = [ficha_fam(r) for r in df.itertuples()]
+    df["dim_bienestar"] = [ficha_bienestar(r) for r in df.itertuples()]
+    df["dim_red"] = [ficha_red(r) for r in df.itertuples()]
+    df["dim_beneficios"] = [ficha_beneficios(r) for r in df.itertuples()]
+    df["origen_registro"] = "Formulario Becado & Verificación Social"
+    df["fecha_actualizacion"] = "Noviembre 2026"
+
     df = df.drop(columns=["zlat"])
     # Algunos faltantes realistas
     for c, frac in [("nem", 0.04), ("logins_lms_semana", 0.03), ("tiempo_traslado_min", 0.06)]:

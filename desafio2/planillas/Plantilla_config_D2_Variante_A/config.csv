@@ -1,13 +1,11 @@
 campo,valor,qué es,ejemplo
-usuario,Jefes y jefas de carrera con muchos estudiantes y poco tiempo.,"A quién apoya la IA. Sean específicos: rol, contexto, tiempo disponible, nivel de lectura.",Tutores pares de segundo año que acompañan a 10 estudiantes cada uno.
-tono,"Profesional, cálido y concreto. Sin jerga técnica.",Cómo habla la IA.,"Cercano, como un compañero mayor."
-largo_respuesta,Cada sección en máximo 3 frases; el borrador en máximo 80 palabras.,Qué tan larga debe ser la respuesta.,Máximo 2 frases por sección.
-ejemplos,"1. Lo que muestran los datos: desde la semana 4 bajó su asistencia y tiene dos entregas atrasadas. Trabaja por turnos. Los datos no dicen por qué.
-2. Apoyos posibles: [S04] Flexibilidad académica, porque trabaja por turnos.
-3. Borrador de mensaje: Hola, ¿cómo vas? Me gustaría conversar 15 minutos para saber cómo te ha ido y ver si podemos apoyarte. Es voluntario y eliges el horario.","1 a 3 ejemplos de una respuesta ideal, escritos por ustedes. La IA imita su estilo, no sus datos.",Escriban aquí una ficha ideal para su usuario.
-instrucciones_extra,"En el borrador, ofrece siempre dos horarios posibles para conversar.",Reglas propias del equipo. No pueden contradecir las reglas fijas de la app.,"Si el estudiante es vespertino, sugiere contacto por WhatsApp institucional."
-titulo_app,Radar de acompañamiento,Título que aparece arriba en la app.,¿A quién llamo esta semana?
-texto_bienvenida,"Cada semana ordenamos a quiénes conviene contactar primero, explicamos por qué y preparamos un borrador. **Tú decides** qué hacer.",Mensaje de bienvenida bajo el título.,"Tu lista de la semana, con el porqué de cada caso."
-texto_boton,✨ Preparar conversación,Texto del botón principal.,Preparar ficha
+usuario,"Equipo Psicosocial (trabajadoras sociales y psicólogas) de Fundación Puente que acompaña a becados de primer año.","A quién apoya la IA. Sean específicos: rol, contexto, tiempo disponible, nivel de lectura.",Tutores pares de segundo año que acompañan a 10 estudiantes cada uno.
+tono,"Profesional, cercano, centrado en la dignidad humana y libre de etiquetas clínicas o de riesgo.","Cómo habla la IA.","Cercano, como un compañero mayor."
+largo_respuesta,Cada sección en máximo 3 frases; el borrador al becado en máximo 80 palabras.,Qué tan larga debe ser la respuesta.,Máximo 2 frases por sección.
+ejemplos,"1. Lo que muestra la Ficha Única: en las primeras semanas aparecen entregas atrasadas y cambio de turnos de trabajo. Estudia en jornada vespertina. 2. Apoyos posibles: [S07] Flexibilidad académica y [S02] CAI Tutorías. 3. Borrador de mensaje al becado: Hola Diego, ¿cómo estás? Te escribimos de Fundación Puente para saber cómo te ha ido en tus ramos y ver si necesitas apoyo en algo este mes. Es voluntario y coordinamos el horario.","1 a 3 ejemplos de una respuesta ideal, escritos por ustedes. La IA imita su estilo, no sus datos.",Escriban aquí una ficha ideal para su usuario.
+instrucciones_extra,"Enfócate en la inserción positiva a la universidad. Nunca utilices palabras como riesgo, porcentaje o deserción en el borrador al becado.",Reglas propias del equipo. No pueden contradecir las reglas fijas de la app.,"Si el estudiante es vespertino, sugiere contacto por WhatsApp institucional."
+titulo_app,Panel del Equipo · Fundación Puente,Título que aparece arriba en la app.,¿A quién llamo esta semana?
+texto_bienvenida,"Acompañamiento integral, Ficha Única y seguimiento ético de becados de primer año. **Tú decides** cada acción.",Mensaje de bienvenida bajo el título.,"Tu lista de la semana, con el porqué de cada caso."
+texto_boton,✨ Preparar Apoyo con IA,Texto del botón principal.,Preparar ficha
 cupo_porcentaje,15,Porcentaje de la cohorte que el tutor puede acompañar por semana (5 a 40).,10
 variables_excluidas,,"Variables que el modelo NO puede usar, además de sexo, sede y tipo de establecimiento (siempre excluidas). Separen con ;. Permitidas: jornada; edad; anios_desde_egreso_media; primera_generacion; gratuidad; tiempo_traslado_min; cuida_dependientes; egreso_liceo_tp; nem; area_carrera; tipo_carrera",jornada; edad

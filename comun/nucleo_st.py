@@ -99,30 +99,308 @@ def registro_equipo() -> pd.DataFrame:
             filas.append(e)
     return pd.DataFrame(filas)
 
-# ------------------------------------------------------------------ apariencia
+# ------------------------------------------------------------------ apariencia e identidad Fundación Puente
 _CSS = """<style>
-.block-container{padding-top:1.4rem;padding-bottom:3rem;max-width:1240px}
-.hero{background:linear-gradient(135deg,#0F766E 0%,#155E75 100%);border-radius:18px;padding:22px 28px 16px;margin:0 0 14px 0;box-shadow:0 6px 18px rgba(15,118,110,.18)}
-.hero .h-tit{color:#fff;font-size:1.85rem;font-weight:700;line-height:1.2;margin:0 0 6px 0}
-.hero .h-sub{color:#E6FFFA;font-size:1.02rem;margin:0 0 10px 0;max-width:900px}
-.chip{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:999px;padding:3px 12px;margin:0 6px 6px 0;font-size:.82rem}
-.card{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:14px 18px;margin:0 0 12px 0;box-shadow:0 1px 3px rgba(15,23,42,.05);color:#0F172A}
-.card .c-tit{font-weight:700;font-size:.98rem;margin:0 0 6px 0;color:#0F172A}
-.card .c-txt{font-size:.95rem;line-height:1.5;color:#1E293B}
-.card.ok{border-left:6px solid #16A34A}.card.warn{border-left:6px solid #D97706}.card.bad{border-left:6px solid #DC2626}.card.info{border-left:6px solid #0F766E}.card.gray{border-left:6px solid #94A3B8}
-.badge{display:inline-block;border-radius:999px;padding:2px 10px;font-size:.78rem;font-weight:600;margin:0 6px 5px 0;white-space:nowrap}
-.b-green{background:#DCFCE7;color:#166534}.b-amber{background:#FEF3C7;color:#92400E}.b-red{background:#FEE2E2;color:#991B1B}.b-teal{background:#CCFBF1;color:#115E59}.b-gray{background:#F1F5F9;color:#334155}
-.quote{border-left:4px solid #5EEAD4;padding:8px 12px;color:#334155;font-style:italic;background:#F0FDFA;border-radius:0 10px 10px 0;margin:4px 0 10px 0}
-div[data-testid="stMetric"]{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:10px 16px;box-shadow:0 1px 3px rgba(15,23,42,.05)}
-div[data-testid="stMetricLabel"] p{font-size:.85rem;color:#475569}
-.stTabs [data-baseweb="tab-list"]{gap:6px}
-.stTabs [data-baseweb="tab"]{background:#fff;border:1px solid #E2E8F0;border-radius:10px 10px 0 0;padding:6px 14px}
-.stTabs [aria-selected="true"]{background:#F0FDFA;border-color:#99F6E4}
-.pie-nota{color:#64748B;font-size:.8rem;margin-top:24px;text-align:center}
+@import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&family=Montserrat:ital,wght@0,400..800;1,400..800&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Figtree', sans-serif !important;
+    color: #32373C;
+}
+
+h1, h2, h3, h4, .h-tit, .c-tit {
+    font-family: Gotham, 'Montserrat', sans-serif !important;
+    font-weight: 700;
+}
+
+.block-container {
+    padding-top: 1.2rem;
+    padding-bottom: 3rem;
+    max-width: 1260px;
+}
+
+/* Hero institucional Fundación Puente */
+.hero {
+    background: linear-gradient(135deg, #9F1127 0%, #820014 100%);
+    border-radius: 18px;
+    padding: 22px 28px 18px;
+    margin: 0 0 16px 0;
+    box-shadow: 0 8px 24px rgba(159, 17, 39, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.hero .h-tit {
+    color: #FFFFFF;
+    font-size: 1.85rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin: 0 0 6px 0;
+    letter-spacing: -0.02em;
+}
+.hero .h-sub {
+    color: #FFEAEF;
+    font-size: 1.02rem;
+    margin: 0 0 12px 0;
+    max-width: 950px;
+    line-height: 1.45;
+}
+.chip {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    color: #FFFFFF;
+    border-radius: 999px;
+    padding: 4px 13px;
+    margin: 0 6px 6px 0;
+    font-size: .83rem;
+    font-weight: 600;
+}
+
+/* Tarjetas */
+.card {
+    background: #FFFFFF;
+    border: 1px solid #E2DCD8;
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin: 0 0 14px 0;
+    box-shadow: 0 2px 6px rgba(50, 55, 60, 0.05);
+    color: #32373C;
+}
+.card .c-tit {
+    font-size: 1.05rem;
+    margin: 0 0 8px 0;
+    color: #9F1127;
+}
+.card .c-txt {
+    font-size: .95rem;
+    line-height: 1.55;
+    color: #32373C;
+}
+
+/* Borde lateral según estado */
+.card.ok { border-left: 6px solid #23A455; }
+.card.warn { border-left: 6px solid #F0960B; }
+.card.bad { border-left: 6px solid #9F1127; }
+.card.info { border-left: 6px solid #4054B2; }
+.card.gray { border-left: 6px solid #8C96A0; }
+
+/* Semáforo de Alertas del Documento (🔴 / 🟠 / 🟡) */
+.alerta-box {
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    border-left: 6px solid;
+}
+.alerta-roja {
+    background: #FFF1F2;
+    border-color: #DC2626;
+    color: #991B1B;
+}
+.alerta-naranja {
+    background: #FFF7ED;
+    border-color: #EA580C;
+    color: #9A3412;
+}
+.alerta-amarilla {
+    background: #FFFBEB;
+    border-color: #D97706;
+    color: #92400E;
+}
+
+/* Asistente de Beneficios: 3 Categorías */
+.cat-box {
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    border: 1px solid;
+}
+.cat-podrias {
+    background: #F0FDF4;
+    border-color: #86EFAC;
+    border-left: 6px solid #23A455;
+}
+.cat-tienes {
+    background: #F0F9FF;
+    border-color: #BAE6FD;
+    border-left: 6px solid #0284C7;
+}
+.cat-requisito {
+    background: #FFFBEB;
+    border-color: #FDE68A;
+    border-left: 6px solid #F0960B;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 3px 11px;
+    font-size: .78rem;
+    font-weight: 700;
+    margin: 0 6px 5px 0;
+    white-space: nowrap;
+}
+.b-green { background: #DCFCE7; color: #166534; }
+.b-amber { background: #FEF3C7; color: #92400E; }
+.b-orange { background: #FFEDD5; color: #9A3412; }
+.b-red { background: #FEE2E2; color: #991B1B; }
+.b-blue { background: #E0E7FF; color: #3730A3; }
+.b-puente { background: #FCE7EB; color: #9F1127; }
+.b-gray { background: #F1F3F5; color: #495057; }
+
+/* Citas y testimonios */
+.quote {
+    border-left: 4px solid #F0960B;
+    padding: 10px 14px;
+    color: #495057;
+    font-style: italic;
+    background: #FFFBF2;
+    border-radius: 0 10px 10px 0;
+    margin: 6px 0 12px 0;
+    line-height: 1.5;
+}
+
+/* KPIs y Métricas */
+div[data-testid="stMetric"] {
+    background: #FFFFFF;
+    border: 1px solid #E2DCD8;
+    border-radius: 14px;
+    padding: 12px 18px;
+    box-shadow: 0 2px 6px rgba(50, 55, 60, 0.04);
+}
+div[data-testid="stMetricLabel"] p {
+    font-size: .88rem;
+    color: #54595F;
+    font-weight: 600;
+}
+div[data-testid="stMetricValue"] {
+    color: #9F1127;
+}
+
+/* Pestañas */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+}
+.stTabs [data-baseweb="tab"] {
+    background: #FFFFFF;
+    border: 1px solid #E2DCD8;
+    border-radius: 10px 10px 0 0;
+    padding: 8px 16px;
+    font-weight: 600;
+    color: #54595F;
+}
+.stTabs [aria-selected="true"] {
+    background: #FCE7EB !important;
+    border-color: #9F1127 !important;
+    color: #9F1127 !important;
+}
+
+/* Botones principales con identidad Fundación Puente */
+button[kind="primary"] {
+    background-color: #9F1127 !important;
+    border-color: #9F1127 !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    box-shadow: 0 3px 0 0 #820014 !important;
+    border-radius: 8px !important;
+}
+button[kind="primary"]:hover {
+    background-color: #820014 !important;
+    border-color: #820014 !important;
+}
+
+/* Estilo chat WhatsApp en Móvil */
+.wa-bubble-user {
+    background-color: #DCF8C6;
+    border-radius: 14px 14px 2px 14px;
+    padding: 10px 14px;
+    margin: 4px 0;
+    color: #111B21;
+    max-width: 85%;
+    margin-left: auto;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.wa-bubble-asst {
+    background-color: #FFFFFF;
+    border-radius: 14px 14px 14px 2px;
+    padding: 10px 14px;
+    margin: 4px 0;
+    color: #111B21;
+    max-width: 85%;
+    border: 1px solid #E2DCD8;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+
+.pie-nota {
+    color: #6C757D;
+    font-size: .82rem;
+    margin-top: 28px;
+    text-align: center;
+}
+
+/* ------------------------------------------------------------- */
+/* RESPONSIVE BREAKPOINTS (Ordenador, Laptop, Tablet, Móvil)    */
+/* ------------------------------------------------------------- */
+
+/* 🖥️ Ordenador (>1200px) */
+@media (min-width: 1200px) {
+    .block-container { max-width: 1280px; }
+}
+
+/* 💻 Laptop (992px - 1199px) */
+@media (min-width: 992px) and (max-width: 1199px) {
+    .block-container { max-width: 1024px; padding-left: 1.5rem; padding-right: 1.5rem; }
+    .hero .h-tit { font-size: 1.65rem; }
+}
+
+/* 📱 Tablet (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+    .hero { padding: 18px 20px; }
+    .hero .h-tit { font-size: 1.45rem; }
+    div[data-testid="column"] { flex: 1 1 calc(50% - 14px) !important; min-width: 260px !important; }
+    button, input, select { min-height: 44px; }
+}
+
+/* 🤳 Móvil (<767px) */
+@media (max-width: 767px) {
+    .block-container { padding-top: 0.8rem; padding-left: 0.8rem; padding-right: 0.8rem; }
+    .hero { padding: 16px 14px; border-radius: 14px; }
+    .hero .h-tit { font-size: 1.3rem; }
+    .hero .h-sub { font-size: 0.92rem; }
+    .stTabs [data-baseweb="tab-list"] {
+        overflow-x: auto;
+        white-space: nowrap;
+        flex-wrap: nowrap;
+        padding-bottom: 6px;
+    }
+    div[data-testid="column"] { width: 100% !important; flex: 1 1 100% !important; margin-bottom: 8px; }
+    button { min-height: 48px !important; width: 100% !important; }
+    div[data-testid="stMetric"] { padding: 10px 12px; margin-bottom: 8px; }
+}
 </style>"""
 
 def estilos():
     st.markdown(_CSS, unsafe_allow_html=True)
+
+def pwa_head():
+    """Inyecta metadatos PWA y registra el Service Worker si el navegador lo soporta."""
+    pwa_tags = """
+    <link rel="manifest" href="/app/static/manifest.json">
+    <meta name="theme-color" content="#9F1127">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Puente Contigo">
+    <link rel="apple-touch-icon" href="/app/static/icon-192.png">
+    <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/app/static/sw.js').catch(function(err) {
+          console.log('SW registration note:', err);
+        });
+      });
+    }
+    </script>
+    """
+    st.markdown(pwa_tags, unsafe_allow_html=True)
 
 def md(texto) -> str:
     """Texto de la planilla o de la IA → HTML seguro (escapa todo y solo respeta **negritas** y saltos de línea)."""
@@ -148,12 +426,20 @@ def _logo_b64(nombre: str) -> str:
         return ""
 
 def logos():
-    """Instituciones organizadoras: PUC a la izquierda, Duoc UC a la derecha."""
-    uc, duoc = _logo_b64("logo_uc.png"), _logo_b64("logo_duoc.png")
-    if uc and duoc:
-        st.markdown(f'''<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;margin:0 0 8px 0">
-            <img src="data:image/png;base64,{uc}" alt="Pontificia Universidad Católica de Chile" style="height:56px;width:auto">
-            <img src="data:image/png;base64,{duoc}" alt="Duoc UC" style="height:34px;width:auto"></div>''', unsafe_allow_html=True)
+    """Co-branding: Pontificia Universidad Católica de Chile, Fundación Puente (al centro) y Duoc UC."""
+    uc = _logo_b64("logo_uc.png")
+    puente = _logo_b64("logo_puente.png")
+    duoc = _logo_b64("logo_duoc.png")
+    
+    centro_img = f'<img src="data:image/png;base64,{puente}" alt="Fundación Puente" style="height:48px;max-width:180px;object-fit:contain">' if puente else '<strong style="color:#9F1127;font-size:1.1rem">Fundación Puente</strong>'
+    uc_img = f'<img src="data:image/png;base64,{uc}" alt="Pontificia Universidad Católica de Chile" style="height:52px;width:auto">' if uc else ''
+    duoc_img = f'<img src="data:image/png;base64,{duoc}" alt="Duoc UC" style="height:32px;width:auto">' if duoc else ''
+
+    st.markdown(f'''<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 12px 0;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:10px">{uc_img}</div>
+        <div style="text-align:center">{centro_img}<div style="font-size:0.75rem;color:#820014;font-style:italic;margin-top:2px">«El principal puente que supera la pobreza»</div></div>
+        <div style="display:flex;align-items:center;gap:10px">{duoc_img}</div>
+    </div>''', unsafe_allow_html=True)
 
 def encabezado(titulo, bienvenida, chips=()):
     logos()
@@ -167,10 +453,22 @@ def corto(texto, n=60) -> str:
 
 # ------------------------------------------------------------------ página y acceso
 def iniciar(app_id: str, titulo: str, icono: str):
-    st.set_page_config(page_title=titulo, page_icon=icono, layout="wide")
+    st.set_page_config(page_title=f"{titulo} · Fundación Puente", page_icon=icono, layout="wide")
     st.session_state["_app"] = app_id
     st.session_state["_titulo_app"] = f"{icono} {titulo}"
     estilos()
+    pwa_head()
+
+def selector_vista_dispositivo():
+    """Selector rápido en la barra lateral para simular en el proyector la vista responsive en vivo durante el pitch."""
+    with st.sidebar:
+        modo = st.selectbox("📱 Simular dispositivo", ["🔄 Automático (Responsive)", "🤳 Móvil (390px)", "📱 Tablet (820px)", "🖥️ Escritorio (1200px)"], key="_modo_vista")
+        if modo.startswith("🤳"):
+            st.markdown("""<style>.block-container{max-width:390px !important;margin:0 auto;border:1px solid #CCC;box-shadow:0 8px 30px rgba(0,0,0,0.15);border-radius:24px;padding:12px;}</style>""", unsafe_allow_html=True)
+            st.caption("🔍 Simulando pantalla de smartphone para pitch")
+        elif modo.startswith("📱"):
+            st.markdown("""<style>.block-container{max-width:820px !important;margin:0 auto;border:1px solid #CCC;box-shadow:0 8px 30px rgba(0,0,0,0.12);border-radius:20px;padding:18px;}</style>""", unsafe_allow_html=True)
+            st.caption("🔍 Simulando pantalla de tablet para pitch")
 
 def aviso_ia():
     st.info(AVISO_IA)
@@ -414,6 +712,7 @@ def repetido(firma: str, segundos: int = 20) -> bool:
     return False
 
 def pie(ia: IA):
+    selector_vista_dispositivo()
     with st.sidebar:
         st.divider(); st.caption(ia.estado())
         st.caption(f"🤖 IA en orden de uso: {ia.proveedores()}")
@@ -425,5 +724,5 @@ def pie(ia: IA):
         if st.button("Salir", width="stretch"):
             for k in ["_equipo", "_codigo", "_sheet_url"]: st.session_state.pop(k, None)
             st.rerun()
-    st.markdown('<div class="pie-nota">Prototipo con datos ficticios · Hackathon IA Aplicada · Congreso Social UC 2026 · '
+    st.markdown('<div class="pie-nota">Prototipo con datos ficticios · Fundación Puente & Congreso Social UC 2026 · '
                 'La decisión final siempre es de una persona.</div>', unsafe_allow_html=True)

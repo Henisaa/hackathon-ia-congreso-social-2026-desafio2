@@ -1,7 +1,7 @@
-id_persona,nombre_ficticio,edad,carrera,jornada,contexto_para_simular
-P1,Camila,29,Técnico en Enfermería,Vespertina,"Mamá de un niño de 4 años, trabaja de día en un supermercado por turnos. Llega cansada y le cambiaron el turno esta semana."
-P2,Diego,19,Analista Programador,Diurna,"Primera generación en estudiar. Le fue mal en la primera prueba de programación y le da vergüenza preguntar."
-P3,Rosa,41,Técnico en Administración,Vespertina,"Volvió a estudiar después de 20 años. Le preocupa no estar al nivel en matemáticas. Muy motivada."
-P4,Matías,20,Técnico en Construcción,Diurna,"Debe dos cuotas del arancel y está esperando el resultado de su gratuidad. Vive a 1 hora y media de la sede."
-P5,Javiera,18,Diseño Gráfico,Diurna,"Entró a la carrera porque su familia quería. No está segura de que sea lo suyo."
-P6,Luis,33,Mecánica Automotriz,Vespertina,"Todo va bien por ahora. Responde el check-in por cumplir."
+id_persona,nombre_ficticio,edad,institucion,carrera,jornada,contexto_para_simular,tipo_alerta_esperada
+P1,Camila,20,Duoc UC San Joaquín,Técnico en Enfermería,Vespertina,"Becada de Fundación Puente. Trabaja de cajera por turnos y cuida a su hermano menor. Esta semana no tiene para la micro ni para almorzar y teme tener que salirse.",🟠 Naranja (48 h)
+P2,Diego,19,INACAP Santiago Centro,Analista Programador,Diurna,"Primera generación en la universidad. Reprobó su primera evaluación de algoritmos con un 2.8 y le da vergüenza pedir ayuda a los profesores.",🟡 Amarilla (Seguimiento)
+P3,Valentina,21,Universidad Central,Trabajo Social,Diurna,"Atraviesa una situación crítica de angustia extrema y violencia familiar en su hogar. Siente que ya no da más y necesita ayuda urgente.",🔴 Roja (Inmediata + Protocolo)
+P4,Matías,19,Duoc UC Maipú,Ingeniería en Construcción,Diurna,"Le avisaron que tiene que desalojar la pieza donde vive a fin de mes y no tiene redes en Santiago. Busca urgente la Beca de Residencia.",🟠 Naranja (48 h)
+P5,Javiera,18,Universidad Diego Portales,Diseño Gráfico,Diurna,"Tiene dudas sobre si su carrera realmente le gusta y necesita entender cómo apelar al FUAS para mantener su beneficio.",🟡 Amarilla (Seguimiento)
+P6,Lucas,20,IP Chile,Gastronomía Internacional,Vespertina,"Le va bien en los ramos. Quiere consultar qué cursos de inglés del CAI eClass y qué talleres de Fundación Puente están abiertos.",🟢 Sin alerta (Informativa)

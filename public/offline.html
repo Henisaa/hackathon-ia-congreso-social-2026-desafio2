@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Puente Contigo · Sin conexión</title>
+  <style>
+    body {
+      font-family: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #FAF8F6;
+      color: #32373C;
+      margin: 0;
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .card {
+      background: #FFFFFF;
+      border: 1px solid #E2DCD8;
+      border-radius: 16px;
+      padding: 32px 24px;
+      max-width: 480px;
+      box-shadow: 0 4px 14px rgba(159, 17, 39, 0.08);
+      text-align: center;
+    }
+    h1 {
+      color: #9F1127;
+      font-size: 1.5rem;
+      margin-top: 0;
+    }
+    p {
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+    .badge {
+      display: inline-block;
+      background: #FEE2E2;
+      color: #991B1B;
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+    .emergency-box {
+      background: #FFF5F5;
+      border: 1px solid #FED7D7;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 20px 0;
+      text-align: left;
+    }
+    .emergency-item {
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+    .emergency-item strong {
+      color: #9F1127;
+    }
+    .btn {
+      background: #9F1127;
+      color: #FFFFFF;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="badge">Modo sin conexión</span>
+    <h1>Puente Contigo</h1>
+    <p>Actualmente no tienes conexión a internet. La orientación por IA volverá automáticamente cuando recuperes tu señal.</p>
+    
+    <div class="emergency-box">
+      <div style="font-weight: 700; margin-bottom: 8px; color: #9F1127;">📞 Contactos de emergencia gratuitos disponibles 24/7:</div>
+      <div class="emergency-item">🚨 <strong>*4141</strong>: Prevención del Suicidio (gratuito desde celulares)</div>
+      <div class="emergency-item">🩺 <strong>600 360 7777</strong>: Salud Responde (Minsal)</div>
+      <div class="emergency-item">🚑 <strong>131</strong>: SAMU Urgencias</div>
+      <div class="emergency-item">✉️ <strong>contacto@fundacionpuente.cl</strong> · Av. Pdte. Errázuriz 3838</div>
+    </div>
+
+    <button class="btn" onclick="window.location.reload()">Reintentar conexión</button>
+  </div>
+</body>
+</html>
