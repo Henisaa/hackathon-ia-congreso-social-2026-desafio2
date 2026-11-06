@@ -1,71 +1,55 @@
-# Hackathon IA Aplicada · Congreso Social UC 2026 · Desafío 2 · Ninguno se queda atrás
+PUENTE CONTIGO
 
-Prototipos de referencia del Desafío 2 (deserción en primer año de educación superior técnico-profesional), preparados por los mentores. Muestran una forma posible de resolver el desafío con IA y con sus protecciones éticas funcionando. Cada equipo puede mejorarlos, adaptarlos o construir su propia solución, y se usan sobre todo en la Etapa 3 · Diseño ([Etapas de la jornada](desafio2/docs/Etapas_jornada_Desafio2.md)). Para copiar el código y publicar una versión propia está la [guía para equipos](docs/TUTORIAL_FORK.md). Los prototipos se adaptan a un usuario desde una planilla de Google, sin programar, con la misma lógica que los del Desafío 3: código y clave por equipo, pestaña `config`, pestaña de extras con fila EJEMPLO, botón "Recargar configuración" y 120 consultas a la IA por equipo.
+Plataforma inteligente de prevencion de la desercion en primer año de educacion superior para becados de Fundacion Puente.
 
-**Todos los datos son ficticios.**
+QUE HACE EL PROYECTO
 
-| Variante | App en línea | Para quién | Qué hace |
-|---|---|---|---|
-| A · Radar de acompañamiento | https://hackaton-d2-a.streamlit.app | Tutor o jefatura de carrera | Ordena a quién contactar esta semana, explica por qué, prepara un borrador y muestra a quién deja fuera la cola |
-| B · Acompaña | https://hackaton-d2-b.streamlit.app | Estudiante de primer año | Check-in conversacional voluntario que orienta a un servicio y deja el caso en una bandeja para una persona |
+Puente Contigo es una aplicacion web progresiva (PWA) orientada a acompañar a estudiantes vulnerables de primer año de educacion superior en la Region Metropolitana de Santiago.
 
-## Documentación
-| Para | Documento |
-|---|---|
-| **Video: cómo funcionan los prototipos (1 min)** | [▶️ Ver video](docs/videos/Video_prototipos_Desafio2.mp4): la pregunta del desafío, el recorrido por las dos apps, las protecciones incluidas y desde dónde parte cada equipo |
-| Jornada (8 etapas oficiales) | [Etapas de la jornada](desafio2/docs/Etapas_jornada_Desafio2.md) · [Fichas del equipo por etapa](desafio2/docs/Fichas_equipo_Desafio2.md) |
-| Participantes | [Guía para participantes](desafio2/docs/Guia_participantes_Desafio2.md) · README de la [Variante A](desafio2/docs/README_Variante_A.md) y la [Variante B](desafio2/docs/README_Variante_B.md) |
-| Mentores | [Guía para mentores](desafio2/docs/Guia_mentores_Desafio2.md) · [Riesgos éticos](desafio2/docs/Riesgos_eticos_Desafio2.md) · [Prueba piloto](desafio2/docs/Prueba_piloto_Desafio2.md) |
-| Rutas de mejora | [Variante A](desafio2/docs/Rutas_de_mejora_Variante_A.md) · [Variante B](desafio2/docs/Rutas_de_mejora_Variante_B.md) |
-| Línea base y datos | Ficha de línea base [A](desafio2/docs/Ficha_linea_base_Variante_A.md) y [B](desafio2/docs/Ficha_linea_base_Variante_B.md) · [Diccionario de datos](desafio2/docs/Diccionario_datos_Desafio2.md) |
-| Pruebas de mentores | [Plan de pruebas de las 4 apps (D2 y D3)](docs/Plan_de_pruebas_mentores.xlsx) |
-| **Equipos: copiar y mejorar el código** | [Guía para equipos: fork, publicar la app, recetas de mejora y app nueva](docs/TUTORIAL_FORK.md) |
-| Desafío 3 (mismo sistema) | [Repositorio D3](https://github.com/Giocrisrai/hackathon-ia-congreso-social-2026-desafio3) · apps https://hackaton-d3-pausa.streamlit.app y https://hackaton-d3-ley.streamlit.app |
+Su proposito es intervenir tempranamente antes de que un estudiante abandone sus estudios por crisis economica cotidiana, sobrecarga laboral/familiar, reprobacion academica o desconocimiento de beneficios.
 
-## Estructura
-```
-comun/nucleo_st.py              núcleo común: acceso por equipo, lectura de la planilla, IA multi-proveedor,
-                                registro, validaciones fijas, protocolo de crisis y diseño
-desafio2/app_a_panel_tutor.py   Variante A · Radar de acompañamiento
-desafio2/app_b_checkin.py       Variante B · Acompaña
-desafio2/app_nueva.py           plantilla para que un equipo construya una app nueva con las mismas protecciones
-desafio2/servicios.py           catálogo de servicios y validación de servicios_extra
-desafio2/datos/                 catálogo, perfiles ficticios y generador del dataset sintético (semilla 2026)
-desafio2/planillas/             planilla base de cada variante, un CSV por pestaña
-desafio2/docs/                  documentación del desafío
-.streamlit/                     tema visual y plantilla de secrets (secrets.toml nunca se sube)
-```
+La plataforma resuelve tres problemas criticos:
 
-## IA con varios proveedores
-La app prueba los proveedores en el orden de `[ia] orden` y, dentro de cada uno, los modelos de su lista `modelos`. Si un modelo falla o se satura, pasa al siguiente sin que el equipo lo note: los saturados se saltan 45 s y los que tienen clave o nombre inválido, 10 min. Si todos fallan, muestra una respuesta de demostración y la app sigue funcionando.
+Escucha 24/7 al becado en sus momentos de mayor vulnerabilidad y activa alertas en tiempo real hacia el equipo profesional de Fundacion Puente.
+Elimina la desinformacion y las falsas promesas mediante un motor RAG de Mundo Cerrado que responde unicamente con informacion verificada de 19 instituciones de educacion superior (IES) y el catalogo oficial de Fundacion Puente.
+Optimiza la labor del equipo de trabajadoras sociales y psicologas, ordenando los casos segun urgencia, entregando borradores calidos de contacto y garantizando siempre la decision final humana.
+COMO FUNCIONA
 
-| Orden por defecto | Modelos |
-|---|---|
-| Groq | `openai/gpt-oss-120b` → `openai/gpt-oss-20b` |
-| Mistral | `mistral-small-latest` → `ministral-8b-latest` |
+El sistema opera bajo un flujo circular entre el estudiante (desde su celular o computador) y el equipo profesional de la fundacion:
 
-**Claude (Anthropic)** ya está integrado (la organización entrega la clave durante el evento e indica el modelo): se agrega `"anthropic"` a `orden` (por ejemplo `orden = ["anthropic", "groq", "mistral"]`) y el bloque `[ia.anthropic]` con `api_key` y `modelos = ["claude-haiku-5-5"]`. La app le adapta sola la llamada: sin `temperature` y con el esquema JSON que Claude acepta.
+A. PERSPECTIVA DEL ESTUDIANTE
 
-Para sumar otra clave no hay que tocar código: se agrega al final de `orden` y se crea su bloque `[ia.<nombre>]` con `api_key` y `modelos`. Gemini, OpenRouter, Cerebras, Together, DeepSeek y OpenAI ya traen su dirección; otro proveedor compatible con OpenAI necesita además `url`. La barra lateral muestra la cadena en uso y bajo cada respuesta se indica qué modelo respondió.
+Mi Ficha Unica Transparente Centraliza los antecedentes del becado en 6 dimensiones: Economica, Academica, Familiar, Bienestar, Red Territorial y Beneficios. El estudiante puede ver exactamente que datos se tienen registrados, su fecha de actualizacion, su fuente y solicitar rectificaciones en cualquier momento.
 
-## Protecciones fijas (no se cambian desde la planilla)
-- Aviso de uso de IA, registro de consultas y respuestas, límite de consultas por equipo.
-- Decisión humana obligatoria en ambas variantes.
-- A: el orden nunca usa sexo, sede ni tipo de colegio; el borrador al estudiante no menciona riesgo, deserción, porcentajes ni predicciones y solo cita servicios del catálogo.
-- B: consentimiento previo, la IA no diagnostica, protocolo de crisis con \*4141, Salud Responde 600 360 7777 y SAMU 131.
-- Español de Chile con tuteo y sin inventar pasos de acceso a los servicios.
-- El tono, el usuario y el largo de la planilla se repiten al final del prompt como estilo obligatorio, con razonamiento medio, para que la IA los respete.
-- Logos de las instituciones organizadoras (Pontificia Universidad Católica de Chile y Duoc UC) en el encabezado.
+Canal Confidencial 24/7 con Semaforo en Tiempo Real Un chat de orientacion voluntario protegido por consentimiento etico explicito. A medida que el estudiante escribe, un motor de analisis en tiempo real evalua el nivel de urgencia y enciende un semaforo de 4 luces:
 
-## Despliegue (organización)
-1. En https://share.streamlit.io, crear dos apps desde este repositorio, rama `main`, Python 3.12, con *Main file* `desafio2/app_a_panel_tutor.py` y `desafio2/app_b_checkin.py`.
-2. En cada app, **Settings → Secrets**: pegar `.streamlit/secrets.example.toml` con las claves de IA, un bloque `[equipos.EXX]` (nombre y clave) por equipo y uno `[equipos.MXX]` por mentor, para que prueben sin gastar la cuota de los equipos.
-3. Subir las planillas base a Google Drive como Hojas de cálculo y compartirlas como Lector.
-4. Las apps se duermen sin visitas. La tarea [Mantener apps despiertas](https://github.com/Giocrisrai/hackathon-ia-congreso-social-2026-desafio2/actions/workflows/mantener_apps_despiertas.yml) (GitHub Actions, en el repositorio del D2) visita las 4 apps cada 4 horas y las despierta; igual conviene abrirlas antes de cada jornada. No subir cambios a `main` durante la jornada: cada cambio reinicia la app y reinicia los contadores de consultas. Para guardar el registro de forma permanente, configurar `[registro]` y `[gcp_service_account]`.
+ROJA (Inmediata): Senales de crisis vital, violencia o angustia extrema. Detiene la respuesta libre de la IA, entrega de inmediato los telefonos de emergencia del Estado (*4141, Salud Responde 600 360 7777, SAMU 131) y la linea de urgencia 24/7 propia de su institucion (por ejemplo, OPS Duoc UC o central de emergencias PUC), notificando al equipo humano con prioridad maxima.
+NARANJA (< 48 horas): Riesgo inminente de abandono por falta de pasajes/comida, turnos laborales extremos o desalojo. Orienta hacia becas de emergencia [S04] o residencia [S05] y agenda contacto humano en menos de 48 horas.
+AMARILLA (Seguimiento en Agenda): Reprobaciones, notas bajas o dudas con el formulario FUAS/gratuidad. Sugiere tutorias del Centro de Atencion Integral CAI [S02] y seguimiento en agenda.
+VERDE (Orientacion Regular): Consultas generales de talleres, actividades y cursos.
+Motor RAG de Mundo Cerrado (Closed-World Assumption) Para erradicar alucinaciones o datos falsos, la IA responde unicamente sustentada en dos fuentes auditadas:
+El documento oficial con los beneficios, becas internas, programas de nivelacion y contactos DAE de 19 Instituciones de Educacion Superior de la RM.
+El catalogo verificado de servicios de Fundacion Puente ([S01] a [S09]). Si un dato no esta disponible en las fuentes oficiales o dice textualmente "No disponible en fuente oficial", la IA no inventa montos ni fechas: declara expresamente la ausencia del dato y entrega el contacto directo de la DAE correspondiente. Debajo de cada respuesta, el estudiante puede desplegar el boton "Fuentes Oficiales Verificadas (RAG)" para auditar el documento y los canales citados.
+Asistente Personalizado de Beneficios Permite seleccionar cualquiera de las 19 instituciones de la Region Metropolitana y cruza la situacion del estudiante en tres columnas:
+Podrias postular: Beneficios compatibles con opcion de pedir ayuda con un clic ("Ayudame a postular").
+Ya lo tienes: Beneficios activos en su ficha.
+Revisa este requisito: Tramites preventivos y plazos que cuidar. Ademas, despliega una ficha tecnica completa de la institucion seleccionada con sus becas internas, programas de acompanamiento, protocolos de salud/urgencia y directorio DAE.
 
-## Pruebas realizadas
-- De punta a punta en navegador real (Chromium): ingreso, ficha y decisión, gráfico de equidad, consentimiento, check-in, protocolo de crisis y bandeja.
-- Con IA real (Groq y Mistral, 30 de octubre de 2026): fichas validadas, check-in sin diagnóstico y cambio automático de proveedor en 5 escenarios (normal, proveedor caído, todos caídos, proveedor nuevo y formato antiguo de secrets).
+B. PERSPECTIVA DEL EQUIPO DE FUNDACION PUENTE
 
-## Licencia
-Código bajo licencia MIT; datos sintéticos, planillas y documentación bajo CC BY 4.0. Ver [LICENSE](LICENSE).
+Bandeja de Situaciones de Apoyo en Tiempo Real Un panel de control donde las profesionales ven en vivo las alertas activadas por los estudiantes. Muestra la cita textual exacta que dijo el estudiante, el historial completo de la conversacion y exige el registro obligatorio de la decision humana (llamar de inmediato, contactar en 48 horas, derivar a CAI o cerrar sin accion).
+
+Copiloto IA de Acompanamiento Para cualquier estudiante seleccionado, genera en un clic:
+
+Una sintesis objetiva de su Ficha Unica.
+Tres apoyos recomendados combinando el catalogo de Fundacion Puente con los programas reales de la institucion del estudiante (tutorias de pares, becas de emergencia y fonos de bienestar).
+Un borrador de mensaje calido, respetuoso y voluntario, libre de etiquetas clinicas o juicios.
+
+Auditoria Antisesgo y Estadisticas Panel de verificacion etica que demuestra matematicamente que el semaforo no utiliza variables demograficas (sexo, sede, edad o comuna) para discriminar alertas. Incluye metricas anonimas consolidadas para rendicion de cuentas ante donantes (tasa de retencion, tiempo de respuesta y principales necesidades detectadas).
+
+REGLAS ETICAS Y TECNICAS INQUEBRANTABLES
+
+Cero diagnosticos clinicos: Filtro automatico que bloquea rotulos psicologicos (depresion, ansiedad o trastornos), derivando a contencion psicosocial.
+Cero sesgo demografico: El semaforo se enciende unica y exclusivamente por las expresiones del estudiante.
+Human-in-the-Loop obligatorio: Ningun beneficio, derivacion o suspension se ejecuta sin aprobacion humana profesional.
+Funcionalidad PWA Offline: Aplicacion 100% instalable en celulares y computadores, con cache local para operar incluso sin conexion a internet en trayectos de metro o micro.
