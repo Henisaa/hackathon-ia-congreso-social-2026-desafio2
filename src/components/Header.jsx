@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Smartphone, Tablet, RefreshCw, Download, Wifi, WifiOff, Share2, X, CheckCircle } from 'lucide-react';
+import { Smartphone, Tablet, RefreshCw, Download, Wifi, WifiOff, Share2, X, CheckCircle, RotateCcw } from 'lucide-react';
 
-export default function Header({ vistaActual, setVistaActual, modoSimulacion, setModoSimulacion }) {
+export default function Header({
+  vistaActual,
+  setVistaActual,
+  modoSimulacion,
+  setModoSimulacion,
+  urgentesCount = 0,
+  pendientesCount = 0,
+  onResetDemo
+}) {
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -174,6 +182,28 @@ export default function Header({ vistaActual, setVistaActual, modoSimulacion, se
               <Download size={13} /> Instalar App
             </button>
           )}
+
+          {/* Botón discreto para reiniciar la demo en pitch */}
+          {onResetDemo && (
+            <button
+              onClick={onResetDemo}
+              title="Restaurar base de demostración y limpiar caché local"
+              style={{
+                background: '#FFFFFF',
+                border: '1px solid #D1D5DB',
+                borderRadius: '8px',
+                padding: '5px 9px',
+                fontSize: '0.74rem',
+                color: '#4B5563',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <RotateCcw size={12} /> Limpiar Demo
+            </button>
+          )}
         </div>
       </div>
 
@@ -213,10 +243,40 @@ export default function Header({ vistaActual, setVistaActual, modoSimulacion, se
               fontSize: '0.84rem',
               backgroundColor: vistaActual === 'equipo' ? '#9F1127' : '#FFFFFF',
               color: vistaActual === 'equipo' ? '#FFFFFF' : '#32373C',
-              borderColor: '#9F1127'
+              borderColor: '#9F1127',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
             }}
           >
-            👩‍⚕️ Panel del Equipo Puente
+            <span>👩‍⚕️ Panel del Equipo Puente</span>
+            {urgentesCount > 0 ? (
+              <span
+                style={{
+                  background: '#DC2626',
+                  color: '#FFFFFF',
+                  borderRadius: '10px',
+                  padding: '1px 7px',
+                  fontSize: '0.72rem',
+                  fontWeight: '800'
+                }}
+              >
+                🚨 {urgentesCount}
+              </span>
+            ) : pendientesCount > 0 ? (
+              <span
+                style={{
+                  background: '#EA580C',
+                  color: '#FFFFFF',
+                  borderRadius: '10px',
+                  padding: '1px 7px',
+                  fontSize: '0.72rem',
+                  fontWeight: '700'
+                }}
+              >
+                {pendientesCount}
+              </span>
+            ) : null}
           </button>
         </div>
 
